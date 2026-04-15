@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import LoginToast from "@/components/ui/LoginToast";
 
 export const metadata: Metadata = {
   title: "EcoURP — Educación en reciclaje",
@@ -13,7 +15,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="min-h-screen font-sans">{children}</body>
+      <body className="min-h-screen font-sans">
+        <AuthProvider>
+          <LoginToast />
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }
