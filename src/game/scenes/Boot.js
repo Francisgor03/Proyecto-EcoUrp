@@ -1,4 +1,5 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
+import fondoPrueba from "@/assets/images/FondoPrueba.jpg";
 
 /**
  * Escena inicial: prepara el canvas y el entorno antes de cargar assets pesados.
@@ -9,8 +10,8 @@ export default class Boot extends Phaser.Scene {
   }
 
   preload() {
-    // Aquí irán this.load.image(), this.load.atlas(), audio, etc.
-    // Sin assets aún: create() se ejecuta al terminar preload vacío.
+    const backgroundUrl = typeof fondoPrueba === "string" ? fondoPrueba : fondoPrueba.src;
+    this.load.image("eco-bg", backgroundUrl);
   }
 
   create() {

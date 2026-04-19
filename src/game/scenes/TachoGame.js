@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 
 /** @typedef {'plastic' | 'paper' | 'glass' | 'organic'} WasteType */
 
@@ -18,9 +18,54 @@ const COLOR = {
   organic: 0xa16207,
 };
 
-const SPAWN_MS = 1800;
-const FALL_SPEED = 220;
-const LIVES_START = 3;
+const DEFAULT_SPAWN_MS = 1800;
+const DEFAULT_FALL_SPEED = 220;
+const DEFAULT_LIVES = 3;
+const MODE_LABEL = {
+  easy: "Facil",
+  normal: "Normal",
+  hard: "Dificil",
+  timed: "Contrarreloj",
+  zen: "Zen",
+};
+
+function getModeConfig(mode) {
+  switch (mode) {
+    case "easy":
+      return { spawnMs: 2100, fallSpeed: 180, lives: 5 };
+    case "hard":
+      return { spawnMs: 1200, fallSpeed: 280, lives: 3 };
+    case "timed":
+      return { spawnMs: 1500, fallSpeed: 240, lives: 3, timeLimitMs: 60000 };
+    case "zen":
+      return { spawnMs: 2000, fallSpeed: 200, lives: 99, infiniteLives: true };
+    case "normal":
+    default:
+      return { spawnMs: DEFAULT_SPAWN_MS, fallSpeed: DEFAULT_FALL_SPEED, lives: DEFAULT_LIVES };
+  }
+}
+
+function getModeDetails(mode) {
+  const config = getModeConfig(mode);
+  const descriptions = {
+    easy: "Modo facil para principiantes. Practica sin presion y con mas margen de error.",
+    normal: "Ritmo equilibrado para entrenar reflejos y mejorar tu precision.",
+    hard: "Modo desafiante con caida rapida. Requiere mas enfoque y velocidad.",
+    timed: "Tienes 60 segundos para sumar puntos. Ideal para jugar rapido.",
+    zen: "Modo libre sin limite de vidas. Juega tranquilo y aprende a tu ritmo.",
+  };
+  const livesLabel = config.infiniteLives ? "Sin limite" : `${config.lives}`;
+  const errorsLabel = config.infiniteLives ? "Sin limite" : `${config.lives}`;
+  const timeLabel =
+    typeof config.timeLimitMs === "number" ? `${Math.ceil(config.timeLimitMs / 1000)}s` : "Sin limite";
+
+  return {
+    description: descriptions[mode] || descriptions.normal,
+    livesLabel,
+    errorsLabel,
+    timeLabel,
+  };
+}
 
 /**
  * Texto educativo cuando el tacho elegido no coincide con el residuo.
@@ -88,8 +133,17 @@ export default class TachoGame extends Phaser.Scene {
   }
 
   create() {
+    const initialMode = this.registry.get("tachoGameMode") || "normal";
+    this.mode = initialMode;
+    this.applyModeConfig(initialMode);
+
     this.score = 0;
-    this.lives = LIVES_START;
+    this.correctCount = 0;
+    this.wrongCount = 0;
+    this.missedCount = 0;
+    this.streak = 0;
+    this.bestStreak = 0;
+    this.isStarted = false;
     this.selectedIndex = 0;
     this.isPausedWrong = false;
     this.isGameOver = false;
@@ -100,6 +154,8 @@ export default class TachoGame extends Phaser.Scene {
     const h = this.scale.height;
 
     this.add.rectangle(w / 2, h / 2, w, h, 0xd1fae5, 1).setDepth(-2);
+    this.backgroundImage = this.add.image(w / 2, h / 2, "eco-bg").setDepth(-1);
+    this.backgroundImage.setDisplaySize(w, h);
 
     // Grupo de GameObjects (no PhysicsGroup): PhysicsGroup reaplica defaults y pone velocityY=0 al add()
     this.trashGroup = this.add.group();
@@ -127,11 +183,28 @@ export default class TachoGame extends Phaser.Scene {
       fontStyle: "bold",
     });
 
-    this.livesText = this.add.text(16, 34, `Vidas: ${this.lives}`, {
+    const livesLabel = this.infiniteLives ? "∞" : this.lives;
+    this.livesText = this.add.text(16, 34, `Vidas: ${livesLabel}`, {
       fontFamily: "system-ui, sans-serif",
       fontSize: "14px",
       color: "#047857",
     });
+
+    this.streakText = this.add.text(16, 54, "Racha: 0", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: "12px",
+      color: "#047857",
+    });
+
+    this.timerText = this.add
+      .text(w - 16, 12, "Tiempo: 60s", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+        color: "#065f46",
+        fontStyle: "bold",
+      })
+      .setOrigin(1, 0)
+      .setVisible(this.timeLeftMs !== null);
 
     this.hintText = this.add.text(w / 2, 12, "1-4: tacho · ← →: mover", {
       fontFamily: "system-ui, sans-serif",
@@ -161,21 +234,14 @@ export default class TachoGame extends Phaser.Scene {
       this
     );
 
-    this.spawnTimer = this.time.addEvent({
-      delay: SPAWN_MS,
-      loop: true,
-      callback: () => {
-        if (!this.isPausedWrong && !this.isGameOver) this.spawnTrash();
-      },
-    });
-
-    // Primer residuo en el siguiente tick (física y timers listos) + no esperar el primer delay del loop
-    this.time.delayedCall(0, () => {
-      if (!this.isPausedWrong && !this.isGameOver) this.spawnTrash();
-    });
+    this.spawnTimer = null;
 
     this.createMobileBinButtons(w, h);
+    this.setMobileVisible(false);
     this.refreshMobileHighlight();
+
+    this.createStartMenu(w, h);
+    this.registerMenuHandler();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.shutdownCleanup());
     this.events.once(Phaser.Scenes.Events.DESTROY, () => this.shutdownCleanup());
@@ -183,6 +249,336 @@ export default class TachoGame extends Phaser.Scene {
 
   shutdownCleanup() {
     this.spawnTimer?.remove(false);
+  }
+
+  applyModeConfig(mode) {
+    const modeConfig = getModeConfig(mode);
+    this.spawnMs = modeConfig.spawnMs;
+    this.fallSpeed = modeConfig.fallSpeed;
+    this.lives = modeConfig.lives;
+    this.infiniteLives = Boolean(modeConfig.infiniteLives);
+    this.timeLimitMs = typeof modeConfig.timeLimitMs === "number" ? modeConfig.timeLimitMs : null;
+    this.timeLeftMs = this.timeLimitMs;
+  }
+
+  registerMenuHandler() {
+    this.game.registry.set("tachoOpenMenu", () => {
+      this.scene.restart();
+    });
+  }
+
+  setMobileVisible(visible) {
+    this.mobileButtons?.forEach(({ bg, txt }) => {
+      bg.setVisible(visible);
+      txt.setVisible(visible);
+    });
+  }
+
+  createStartMenu(w, h) {
+    this.menuSection = "main";
+
+    this.menuOverlay = this.add
+      .rectangle(w / 2, h / 2, w, h, 0x022c22, 0.7)
+      .setDepth(30)
+      .setInteractive();
+
+    this.menuTitle = this.add
+      .text(w / 2, h / 2 - 210, "Eco-Catch", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "44px",
+        color: "#ecfdf5",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(31);
+
+    this.menuSubtitle = this.add
+      .text(w / 2, h / 2 - 175, "Atrapa y separa residuos", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+        color: "#a7f3d0",
+      })
+      .setOrigin(0.5)
+      .setDepth(31);
+
+    const leftX = w / 2 - 220;
+    const rightX = w / 2 + 180;
+    const navItems = [
+      { id: "play", label: "Jugar" },
+      { id: "difficulty", label: "Dificultad" },
+      { id: "options", label: "Opciones" },
+    ];
+
+    this.menuNavButtons = navItems.map((item, index) => {
+      const y = h / 2 - 110 + index * 42;
+      const bg = this.add
+        .rectangle(leftX, y, 180, 34, 0xffffff, 0.12)
+        .setStrokeStyle(2, 0x10b981, 1)
+        .setDepth(31)
+        .setInteractive({ useHandCursor: true });
+      const txt = this.add
+        .text(leftX, y, item.label, {
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "14px",
+          color: "#ecfdf5",
+        })
+        .setOrigin(0.5)
+        .setDepth(32);
+
+      bg.on("pointerdown", () => {
+        if (item.id === "play") {
+          this.startGame();
+          return;
+        }
+        this.setMenuSection(item.id);
+      });
+
+      return { bg, txt, id: item.id };
+    });
+
+    const modes = ["easy", "normal", "hard", "timed", "zen"];
+    this.difficultyButtons = modes.map((mode, index) => {
+      const y = h / 2 - 50 + index * 34;
+      const label = MODE_LABEL[mode] || mode;
+      const bg = this.add
+        .rectangle(leftX, y, 180, 32, 0xffffff, 0.08)
+        .setStrokeStyle(1, 0x5eead4, 1)
+        .setDepth(31)
+        .setInteractive({ useHandCursor: true });
+      const txt = this.add
+        .text(leftX, y, label, {
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "13px",
+          color: "#ecfdf5",
+        })
+        .setOrigin(0.5)
+        .setDepth(32);
+
+      bg.on("pointerdown", () => this.setMode(mode));
+      return { bg, txt, mode };
+    });
+
+    this.menuPanelBg = this.add
+      .rectangle(rightX, h / 2 + 10, 320, 260, 0x0f172a, 0.45)
+      .setStrokeStyle(2, 0x10b981, 0.8)
+      .setDepth(31);
+
+    this.menuPanelTitle = this.add
+      .text(rightX, h / 2 - 105, "Dificultad", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "16px",
+        color: "#ecfdf5",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(32);
+
+    this.menuPanelStats = this.add
+      .text(rightX, h / 2 - 70, "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "12px",
+        color: "#d1fae5",
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(32);
+
+    this.menuPanelDesc = this.add
+      .text(rightX, h / 2 + 20, "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "12px",
+        color: "#ecfdf5",
+        wordWrap: { width: 250 },
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(32);
+
+    this.menuPanelWip = this.add
+      .text(rightX, h / 2 + 10, "Opciones (WIP)\nProximamente controles de sonido.", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "12px",
+        color: "#ecfdf5",
+        align: "center",
+        wordWrap: { width: 240 },
+      })
+      .setOrigin(0.5)
+      .setDepth(32)
+      .setVisible(false);
+
+    this.menuConfirmButton = this.add
+      .rectangle(leftX, h / 2 + 150, 180, 36, 0x10b981, 1)
+      .setDepth(31)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.menuConfirmLabel = this.add
+      .text(leftX, h / 2 + 150, "Listo", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "13px",
+        color: "#022c22",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(32)
+      .setVisible(false);
+
+    this.menuBackButton = this.add
+      .rectangle(leftX, h / 2 + 195, 180, 30, 0xffffff, 0.1)
+      .setStrokeStyle(2, 0x10b981, 1)
+      .setDepth(31)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.menuBackLabel = this.add
+      .text(leftX, h / 2 + 195, "Volver", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "12px",
+        color: "#ecfdf5",
+      })
+      .setOrigin(0.5)
+      .setDepth(32)
+      .setVisible(false);
+
+    this.menuConfirmButton.on("pointerdown", () => this.setMenuSection("main"));
+    this.menuBackButton.on("pointerdown", () => this.setMenuSection("main"));
+
+    this.setMode(this.mode);
+    this.setMenuSection(this.menuSection);
+  }
+
+  setMode(mode) {
+    this.mode = mode;
+    this.registry.set("tachoGameMode", mode);
+    this.applyModeConfig(mode);
+    const livesLabel = this.infiniteLives ? "∞" : this.lives;
+    this.livesText.setText(`Vidas: ${livesLabel}`);
+    if (this.timerText) {
+      if (this.timeLeftMs !== null) {
+        const seconds = Math.ceil(this.timeLeftMs / 1000);
+        this.timerText.setText(`Tiempo: ${seconds || 60}s`);
+        this.timerText.setVisible(true);
+      } else {
+        this.timerText.setVisible(false);
+      }
+    }
+    this.difficultyButtons?.forEach(({ bg, mode: current }) => {
+      const active = current === mode;
+      bg.setFillStyle(active ? 0x10b981 : 0xffffff, active ? 0.35 : 0.08);
+      bg.setStrokeStyle(active ? 3 : 1, 0x10b981, 1);
+    });
+    this.updateDifficultyPanel();
+  }
+
+  setMenuSection(section) {
+    this.menuSection = section;
+    const showDifficulty = section === "difficulty";
+    const showOptions = section === "options";
+    const showPanel = showDifficulty || showOptions;
+    const showMain = section === "main";
+
+    this.difficultyButtons?.forEach(({ bg, txt }) => {
+      bg.setVisible(showDifficulty);
+      txt.setVisible(showDifficulty);
+    });
+
+    this.menuConfirmButton.setVisible(showDifficulty);
+    this.menuConfirmLabel.setVisible(showDifficulty);
+    this.menuBackButton.setVisible(showDifficulty || showOptions);
+    this.menuBackLabel.setVisible(showDifficulty || showOptions);
+
+    this.menuPanelBg.setVisible(showPanel);
+    this.menuPanelTitle.setVisible(showDifficulty);
+    this.menuPanelStats.setVisible(showDifficulty);
+    this.menuPanelDesc.setVisible(showDifficulty);
+    this.menuPanelWip.setVisible(showOptions);
+
+    this.menuNavButtons?.forEach(({ bg, txt, id }) => {
+      bg.setVisible(showMain);
+      txt.setVisible(showMain);
+      const active = id === section;
+      bg.setFillStyle(active ? 0x10b981 : 0xffffff, active ? 0.35 : 0.12);
+      bg.setStrokeStyle(active ? 3 : 2, 0x10b981, 1);
+    });
+  }
+
+  updateDifficultyPanel() {
+    if (!this.menuPanelTitle || !this.menuPanelStats || !this.menuPanelDesc) return;
+    const details = getModeDetails(this.mode);
+    const label = MODE_LABEL[this.mode] || "Normal";
+    this.menuPanelTitle.setText(`Dificultad: ${label}`);
+    this.menuPanelStats.setText(
+      `Vidas: ${details.livesLabel}\nErrores permitidos: ${details.errorsLabel}\nTiempo: ${details.timeLabel}`
+    );
+    this.menuPanelDesc.setText(details.description);
+  }
+
+  startGame() {
+    this.isStarted = true;
+    this.isGameOver = false;
+    this.isPausedWrong = false;
+    this.score = 0;
+    this.correctCount = 0;
+    this.wrongCount = 0;
+    this.missedCount = 0;
+    this.streak = 0;
+    this.bestStreak = 0;
+    this.timeLeftMs = this.timeLimitMs;
+    this.scoreText.setText("Puntos: 0");
+    this.streakText.setText("Racha: 0");
+    const livesLabel = this.infiniteLives ? "∞" : this.lives;
+    this.livesText.setText(`Vidas: ${livesLabel}`);
+
+    if (this.timerText) {
+      if (this.timeLeftMs !== null) {
+        const seconds = Math.ceil(this.timeLeftMs / 1000);
+        this.timerText.setText(`Tiempo: ${seconds}s`);
+        this.timerText.setVisible(true);
+      } else {
+        this.timerText.setVisible(false);
+      }
+    }
+
+    this.menuOverlay?.setVisible(false);
+    this.menuTitle?.setVisible(false);
+    this.menuSubtitle?.setVisible(false);
+    this.menuNavButtons?.forEach(({ bg, txt }) => {
+      bg.setVisible(false);
+      txt.setVisible(false);
+    });
+    this.difficultyButtons?.forEach(({ bg, txt }) => {
+      bg.setVisible(false);
+      txt.setVisible(false);
+    });
+    this.menuConfirmButton?.setVisible(false);
+    this.menuConfirmLabel?.setVisible(false);
+    this.menuBackButton?.setVisible(false);
+    this.menuBackLabel?.setVisible(false);
+    this.menuPanelBg?.setVisible(false);
+    this.menuPanelTitle?.setVisible(false);
+    this.menuPanelStats?.setVisible(false);
+    this.menuPanelDesc?.setVisible(false);
+    this.menuPanelWip?.setVisible(false);
+
+    this.setMobileVisible(true);
+    this.clearTrash();
+
+    this.spawnTimer?.remove(false);
+    this.spawnTimer = this.time.addEvent({
+      delay: this.spawnMs,
+      loop: true,
+      callback: () => {
+        if (!this.isPausedWrong && !this.isGameOver) this.spawnTrash();
+      },
+    });
+
+    this.startTimeMs = this.time.now;
+    this.time.delayedCall(0, () => {
+      if (!this.isPausedWrong && !this.isGameOver) this.spawnTrash();
+    });
+  }
+
+  clearTrash() {
+    this.trashGroup?.getChildren().forEach((obj) => obj.destroy());
+    this.trashGroup?.clear(true, true);
   }
 
   /**
@@ -215,7 +611,7 @@ export default class TachoGame extends Phaser.Scene {
         .setDepth(11);
 
       bg.on("pointerdown", () => {
-        if (!this.isGameOver) this.setSelectedIndex(i);
+        if (!this.isGameOver && this.isStarted) this.setSelectedIndex(i);
       });
 
       this.mobileButtons.push({ bg, txt, index: i });
@@ -223,7 +619,7 @@ export default class TachoGame extends Phaser.Scene {
   }
 
   setSelectedIndex(index) {
-    if (index < 0 || index > 3 || this.isGameOver) return;
+    if (index < 0 || index > 3 || this.isGameOver || !this.isStarted) return;
     this.selectedIndex = index;
     const type = WASTE_TYPES[index];
     this.bin.setFillStyle(COLOR[type], 1);
@@ -255,7 +651,7 @@ export default class TachoGame extends Phaser.Scene {
     piece.setData("type", type);
     piece.setData("resolved", false);
     this.trashGroup.add(piece, true);
-    body.setVelocity(0, FALL_SPEED);
+    body.setVelocity(0, this.fallSpeed);
   }
 
   /**
@@ -269,11 +665,18 @@ export default class TachoGame extends Phaser.Scene {
       trash.setData("resolved", true);
       trash.destroy();
       this.score += 1;
+      this.correctCount += 1;
+      this.streak += 1;
+      this.bestStreak = Math.max(this.bestStreak, this.streak);
       this.scoreText.setText(`Puntos: ${this.score}`);
+      this.streakText.setText(`Racha: ${this.streak}`);
       return;
     }
 
     trash.setData("resolved", true);
+    this.wrongCount += 1;
+    this.streak = 0;
+    this.streakText.setText(`Racha: ${this.streak}`);
     this.pendingTrash = trash;
     this.physics.pause();
     this.isPausedWrong = true;
@@ -307,6 +710,10 @@ export default class TachoGame extends Phaser.Scene {
     if (trash.getData("resolved") || this.isPausedWrong || this.isGameOver) return;
     trash.setData("resolved", true);
     trash.destroy();
+    this.missedCount += 1;
+    this.streak = 0;
+    this.streakText.setText(`Racha: ${this.streak}`);
+    if (this.infiniteLives) return;
     this.lives -= 1;
     this.livesText.setText(`Vidas: ${this.lives}`);
     if (this.lives <= 0) {
@@ -320,35 +727,35 @@ export default class TachoGame extends Phaser.Scene {
     this.spawnTimer?.remove(false);
     this.physics.pause();
 
-    const w = this.scale.width;
-    const h = this.scale.height;
-    this.add
-      .rectangle(w / 2, h / 2, w, h, 0x022c22, 0.65)
-      .setDepth(20);
-    this.add
-      .text(w / 2, h / 2 - 20, "Partida terminada", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "28px",
-        color: "#ecfdf5",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(21);
-    this.add
-      .text(w / 2, h / 2 + 18, `Puntaje: ${this.score}`, {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "20px",
-        color: "#a7f3d0",
-      })
-      .setOrigin(0.5)
-      .setDepth(21);
-
+    const durationMs = this.startTimeMs ? Math.max(0, this.time.now - this.startTimeMs) : null;
     const handlers = this.game.registry.get("reactHandlers");
-    handlers?.onGameOver?.({ score: this.score });
+    handlers?.onGameOver?.({
+      score: this.score,
+      summary: {
+        correct: this.correctCount,
+        wrong: this.wrongCount,
+        missed: this.missedCount,
+        durationMs,
+        mode: this.mode,
+        modeLabel: MODE_LABEL[this.mode] || "Normal",
+      },
+    });
   }
 
   update() {
-    if (this.isGameOver) return;
+    if (this.isGameOver || !this.isStarted) return;
+
+    if (this.timeLeftMs !== null && !this.isPausedWrong) {
+      this.timeLeftMs = Math.max(0, this.timeLeftMs - this.game.loop.delta);
+      if (this.timerText) {
+        const seconds = Math.ceil(this.timeLeftMs / 1000);
+        this.timerText.setText(`Tiempo: ${seconds}s`);
+      }
+      if (this.timeLeftMs === 0) {
+        this.triggerGameOver();
+        return;
+      }
+    }
 
     if (!this.isPausedWrong) {
       const speed = 260;

@@ -75,6 +75,9 @@ export default function JuegoPage() {
         <p className="mt-4 text-center text-xs text-eco-emerald-600 sm:text-left">
           PC: teclas 1–4 cambian el tacho; flechas o A/D mueven. Móvil: botones inferiores.
         </p>
+        <p className="mt-2 text-center text-xs text-eco-emerald-600 sm:text-left">
+          El modo se elige dentro del juego desde el menu de inicio.
+        </p>
       </div>
     </div>
   );

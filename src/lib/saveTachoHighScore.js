@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 
 /**
- * Guarda el puntaje máximo del usuario en Supabase (tabla `ecourp_tacho_scores`).
+ * Guarda el puntaje máximo del usuario en Supabase.
  *
  * SQL sugerido (ejecutar en el SQL Editor del proyecto):
  *
@@ -16,16 +16,25 @@ import { supabase } from "@/lib/supabaseClient";
  * create policy "Actualización propia" on public.ecourp_tacho_scores for update using (auth.uid() = user_id);
  *
  * @param {number} score Puntaje de la partida actual
+ * @param {string} [gameMode] Modo de juego
  */
-export async function saveTachoHighScore(score) {
+export async function saveTachoHighScore(score, gameMode = "normal") {
   if (!supabase || typeof score !== "number" || !Number.isFinite(score)) return;
 
-  const {
+  let {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError || !user) return;
+  if (userError || !user) {
+    const { data } = await supabase.auth.getSession();
+    user = data?.session?.user ?? null;
+  }
+
+  if (!user) {
+    console.warn("[EcoURP] No se encontro sesion para guardar puntaje.");
+    return;
+  }
 
   const { data: row, error: selectError } = await supabase
     .from("ecourp_tacho_scores")
@@ -38,18 +47,53 @@ export async function saveTachoHighScore(score) {
   }
 
   const previous = row?.max_score ?? 0;
-  if (score <= previous) return;
+  if (score > previous) {
+    const { error: upsertError } = await supabase.from("ecourp_tacho_scores").upsert(
+      {
+        user_id: user.id,
+        max_score: Math.floor(score),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
 
-  const { error: upsertError } = await supabase.from("ecourp_tacho_scores").upsert(
+    if (upsertError) {
+      console.warn("[EcoURP] No se pudo guardar puntaje:", upsertError.message);
+    }
+  }
+
+  const mode = typeof gameMode === "string" ? gameMode : "normal";
+  const { data: modeRow, error: modeSelectError } = await supabase
+    .from("ecourp_tacho_scores_mode")
+    .select("max_score")
+    .eq("user_id", user.id)
+    .eq("game_mode", mode)
+    .maybeSingle();
+
+  if (modeSelectError && modeSelectError.code !== "PGRST116") {
+    console.warn("[EcoURP] No se pudo leer puntaje por modo:", modeSelectError.message);
+  }
+
+  const modePrevious = modeRow?.max_score ?? 0;
+  if (score <= modePrevious) return;
+
+  const { error: modeUpsertError } = await supabase.from("ecourp_tacho_scores_mode").upsert(
     {
       user_id: user.id,
+      game_mode: mode,
       max_score: Math.floor(score),
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "user_id" }
+    { onConflict: "user_id,game_mode" }
   );
 
-  if (upsertError) {
-    console.warn("[EcoURP] No se pudo guardar puntaje:", upsertError.message);
+  if (modeUpsertError) {
+    console.warn("[EcoURP] No se pudo guardar puntaje por modo:", modeUpsertError);
+  } else {
+    console.info("[EcoURP] Puntaje guardado por modo:", {
+      userId: user.id,
+      gameMode: mode,
+      score,
+    });
   }
 }

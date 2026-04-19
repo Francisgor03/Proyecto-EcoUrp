@@ -1,15 +1,15 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import Boot from "./scenes/Boot.js";
 import TachoGame from "./scenes/TachoGame.js";
 
-const BASE_WIDTH = 800;
-const BASE_HEIGHT = 600;
+const BASE_WIDTH = 960;
+const BASE_HEIGHT = 720;
 
 /**
  * @param {HTMLElement} parent Contenedor del canvas (debe tener tamaño definido en CSS).
  * @returns {Phaser.Types.Core.GameConfig}
  */
-export function createPhaserGameConfig(parent) {
+export function createPhaserGameConfig(parent, _options = {}) {
   return {
     type: Phaser.AUTO,
     parent,

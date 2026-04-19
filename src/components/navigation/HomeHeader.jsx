@@ -35,6 +35,12 @@ export default function HomeHeader() {
           >
             Jugar
           </Link>
+          <Link
+            href="/ranking"
+            className="rounded-full px-4 py-2 text-sm font-medium text-eco-emerald-800 transition hover:bg-eco-emerald-100"
+          >
+            Ranking
+          </Link>
           {!loading && isConfigured && session ? (
             <UserMenu />
           ) : (

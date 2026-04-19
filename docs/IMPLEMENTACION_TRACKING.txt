@@ -1,0 +1,42 @@
+IMPLEMENTACION TRACKING
+Fecha inicio: 2026-04-15
+
+ENTREGABLE 1 - DATA (esquema y captura de sesiones)
+IMPLEMENTADO:
+- [x] Definir esquema SQL para sesiones y estadisticas.
+- [x] Guardar sesiones de juego en Supabase.
+- [x] Documentar pasos para activar RLS y politicas.
+PENDIENTE:
+- [ ] Ajustar politicas para ranking publico si aplica.
+- [ ] Consultas de ranking y perfil usando nuevas tablas.
+MEJORAS:
+- [ ] Agregar duracion real de la partida.
+- [ ] Registrar precision (aciertos vs errores).
+
+ENTREGABLE 2 - JUEGO (modos y HUD)
+IMPLEMENTADO:
+- [x] Selector de modos dentro del juego (menu de inicio).
+- [x] Parametrizar PhaserConfig y TachoGame.
+- [x] HUD con racha y feedback extra.
+PENDIENTE:
+- [x] Modal de fin de partida con resumen ampliado.
+MEJORAS:
+- [ ] Tutorial contextual durante la partida.
+
+ENTREGABLE 3 - RANKING
+IMPLEMENTADO:
+- [x] Pagina /ranking con filtros y posicion propia.
+- [x] Resaltado del usuario solo si hay sesion activa.
+- [x] Mensaje para iniciar sesion cuando no hay cuenta activa.
+PENDIENTE:
+- [ ] Mostrar nombre y avatar de perfiles.
+MEJORAS:
+- [ ] Ranking semanal y mensual.
+
+ENTREGABLE 4 - PERFIL
+IMPLEMENTADO:
+- [x] Panel de estadisticas y actividad reciente.
+PENDIENTE:
+- [ ] Logros y badges basicos.
+MEJORAS:
+- [ ] Grafico de progreso con historico.
