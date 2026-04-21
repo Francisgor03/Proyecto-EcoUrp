@@ -5,6 +5,77 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
+const AUTH_EMAIL_COOLDOWN_MS = 60_000;
+
+function getAuthErrorMessage(error) {
+  if (error && typeof error === "object" && typeof error.message === "string") {
+    return error.message;
+  }
+
+  return "No se pudo completar la solicitud. Intenta nuevamente.";
+}
+
+function isEmailRateLimitError(error) {
+  const message = getAuthErrorMessage(error).toLowerCase();
+  const code = typeof error?.code === "string" ? error.code.toLowerCase() : "";
+  const status = typeof error?.status === "number" ? error.status : undefined;
+
+  return (
+    code === "over_email_send_rate_limit" ||
+    status === 429 ||
+    message.includes("email rate limit") ||
+    message.includes("rate limit") ||
+    message.includes("too many requests") ||
+    message.includes("security purposes")
+  );
+}
+
+function getRetryAfterMs(errorMessage) {
+  const secondMatch = errorMessage.match(/(\d+)\s*second/i);
+  if (secondMatch) {
+    return Number(secondMatch[1]) * 1000;
+  }
+
+  const minuteMatch = errorMessage.match(/(\d+)\s*minute/i);
+  if (minuteMatch) {
+    return Number(minuteMatch[1]) * 60_000;
+  }
+
+  return AUTH_EMAIL_COOLDOWN_MS;
+}
+
+function getCooldownKey(flow, email) {
+  return `ecourp_auth_${flow}_${email.toLowerCase()}`;
+}
+
+function getRemainingCooldownMs(flow, email) {
+  if (typeof window === "undefined") return 0;
+
+  const rawValue = window.sessionStorage.getItem(getCooldownKey(flow, email));
+  const lastAttemptMs = rawValue ? Number(rawValue) : NaN;
+  if (!Number.isFinite(lastAttemptMs)) {
+    return 0;
+  }
+
+  const elapsedMs = Date.now() - lastAttemptMs;
+  if (elapsedMs >= AUTH_EMAIL_COOLDOWN_MS) {
+    return 0;
+  }
+
+  return AUTH_EMAIL_COOLDOWN_MS - elapsedMs;
+}
+
+function saveCooldown(flow, email) {
+  if (typeof window === "undefined") return;
+
+  window.sessionStorage.setItem(getCooldownKey(flow, email), String(Date.now()));
+}
+
+function formatRateLimitMessage(waitMs) {
+  const seconds = Math.max(1, Math.ceil(waitMs / 1000));
+  return `Demasiados correos enviados. Espera ${seconds} segundos e intenta de nuevo.`;
+}
+
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,6 +113,11 @@ export default function LoginForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (loading) {
+      return;
+    }
+
     setError("");
     setMessage("");
 
@@ -76,21 +152,41 @@ export default function LoginForm() {
     setLoading(true);
     try {
       if (isReset) {
+        const resetCooldownMs = getRemainingCooldownMs("reset", emailTrim);
+        if (resetCooldownMs > 0) {
+          setError(formatRateLimitMessage(resetCooldownMs));
+          return;
+        }
+
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(emailTrim, {
           redirectTo:
             typeof window !== "undefined" ? `${window.location.origin}/login` : undefined,
         });
 
         if (resetError) {
-          setError(resetError.message);
+          if (isEmailRateLimitError(resetError)) {
+            const waitMs = getRetryAfterMs(getAuthErrorMessage(resetError));
+            saveCooldown("reset", emailTrim);
+            setError(formatRateLimitMessage(waitMs));
+            return;
+          }
+
+          setError(getAuthErrorMessage(resetError));
           return;
         }
 
+        saveCooldown("reset", emailTrim);
         setMessage("Te enviamos un correo para restablecer tu contraseña.");
         return;
       }
 
       if (isSignup) {
+        const signupCooldownMs = getRemainingCooldownMs("signup", emailTrim);
+        if (signupCooldownMs > 0) {
+          setError(formatRateLimitMessage(signupCooldownMs));
+          return;
+        }
+
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: emailTrim,
           password,
@@ -101,10 +197,18 @@ export default function LoginForm() {
         });
 
         if (signUpError) {
-          setError(signUpError.message);
+          if (isEmailRateLimitError(signUpError)) {
+            const waitMs = getRetryAfterMs(getAuthErrorMessage(signUpError));
+            saveCooldown("signup", emailTrim);
+            setError(formatRateLimitMessage(waitMs));
+            return;
+          }
+
+          setError(getAuthErrorMessage(signUpError));
           return;
         }
 
+        saveCooldown("signup", emailTrim);
         if (data?.user?.id) {
           setPendingUserId(data.user.id);
           setProfilePromptOpen(true);

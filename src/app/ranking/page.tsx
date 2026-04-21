@@ -20,9 +20,9 @@ type ModeKey = keyof typeof MODE_LABELS;
 export default async function RankingPage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const params = await Promise.resolve(searchParams);
+  const params = (await searchParams) ?? {};
   const range = params?.range === "weekly" ? "weekly" : "all";
   const mode: ModeKey =
     typeof params?.mode === "string" && params.mode in MODE_LABELS

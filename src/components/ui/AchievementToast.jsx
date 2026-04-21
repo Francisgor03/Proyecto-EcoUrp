@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
 import { ACHIEVEMENTS } from "@/lib/achievementsCatalog";
 
 const EVENT_NAME = "ecourp:achievement-unlocked";
@@ -16,6 +17,7 @@ export default function AchievementToast() {
   const [queue, setQueue] = useState([]);
   const [current, setCurrent] = useState(null);
   const [visible, setVisible] = useState(false);
+  const cardRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -52,13 +54,30 @@ export default function AchievementToast() {
     return () => window.clearTimeout(timer);
   }, [visible, current]);
 
-  const hidden = useMemo(() => !current || !visible, [current, visible]);
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card || !current) return;
 
-  if (hidden) return null;
+    if (visible) {
+      gsap.fromTo(
+        card,
+        { autoAlpha: 0, scale: 0, y: -20 },
+        { autoAlpha: 1, scale: 1, y: 0, duration: 0.7, ease: "bounce.out" }
+      );
+      return;
+    }
+
+    gsap.to(card, { autoAlpha: 0, scale: 0.94, y: -8, duration: 0.16, ease: "power2.in" });
+  }, [visible, current]);
+
+  if (!current) return null;
 
   return (
-    <div className="fixed right-4 top-16 z-50 w-[min(92vw,380px)]">
-      <div className="flex items-start gap-3 rounded-2xl border border-eco-emerald-200 bg-white/95 px-4 py-3 shadow-lg shadow-eco-emerald-900/10 backdrop-blur">
+    <div className={`fixed right-4 top-16 z-50 w-[min(92vw,380px)] ${visible ? "" : "pointer-events-none"}`}>
+      <div
+        ref={cardRef}
+        className="flex items-start gap-3 rounded-2xl border border-eco-emerald-200 bg-white/95 px-4 py-3 shadow-lg shadow-eco-emerald-900/10 backdrop-blur"
+      >
         <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-eco-emerald-100 text-xs font-bold text-eco-emerald-800">
           {current.iconText || "LOGO"}
         </div>

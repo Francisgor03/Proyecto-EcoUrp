@@ -5,19 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/components/auth/AuthProvider";
-
-function getInitials(label) {
-  if (!label) return "E";
-  const parts = label.trim().split(" ").filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-}
+import { getAvatarById } from "../../../config/avatars";
 
 export default function UserMenu() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [avatarId, setAvatarId] = useState("sprout");
   const [profileLoaded, setProfileLoaded] = useState(false);
   const menuRef = useRef(null);
 
@@ -27,17 +22,19 @@ export default function UserMenu() {
     let isMounted = true;
     supabase
       .from("profiles")
-      .select("display_name")
+      .select("display_name,avatar_id")
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (!isMounted) return;
         setDisplayName(data?.display_name?.trim() || "");
+        setAvatarId(getAvatarById(data?.avatar_id).id);
         setProfileLoaded(true);
       })
       .catch(() => {
         if (!isMounted) return;
         setDisplayName("");
+        setAvatarId("sprout");
         setProfileLoaded(true);
       });
 
@@ -67,6 +64,10 @@ export default function UserMenu() {
     return "Tu cuenta";
   }, [displayName, profileLoaded, user]);
 
+  const avatarEmoji = useMemo(() => {
+    return getAvatarById(avatarId).emoji;
+  }, [avatarId]);
+
   if (!user) return null;
 
   return (
@@ -78,8 +79,8 @@ export default function UserMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-eco-emerald-600 text-xs font-bold text-white">
-          {profileLoaded ? getInitials(label) : "…"}
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-eco-emerald-600 text-base leading-none text-white">
+          {profileLoaded ? avatarEmoji : "…"}
         </span>
         <span className="max-w-[140px] truncate">{label}</span>
         <span aria-hidden className="text-eco-emerald-500">▾</span>
@@ -94,6 +95,7 @@ export default function UserMenu() {
             <p className="mt-1 text-sm font-semibold text-eco-emerald-900">
               {label}
             </p>
+            <p className="mt-1 text-xs text-eco-emerald-700">Avatar: {profileLoaded ? avatarEmoji : "..."}</p>
           </div>
           <div className="flex flex-col">
             <Link

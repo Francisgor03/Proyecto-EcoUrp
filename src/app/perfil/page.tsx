@@ -1,0 +1,838 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { ACHIEVEMENTS } from "@/lib/achievementsCatalog";
+import AvatarSelector from "../../../components/profile/AvatarSelector";
+import {
+  DEFAULT_AVATAR_ID,
+  getAvatarById,
+  getNormalizedModes,
+  type UserStats,
+} from "../../../config/avatars";
+
+type GameMode = "easy" | "normal" | "hard" | "timed" | "zen";
+
+type SessionRow = {
+  score: number | null;
+  game_mode: string | null;
+  duration_ms: number | null;
+  created_at: string | null;
+};
+
+type ProfileRow = {
+  display_name: string | null;
+  avatar_id: string | null;
+};
+
+type ModeHistoryRow = {
+  game_mode: string | null;
+};
+
+type ProfileStatsRow = {
+  sessions_count: number | null;
+  best_score: number | null;
+  avg_score: number | null;
+  last_played_at: string | null;
+};
+
+type AuthShape = {
+  session: unknown | null;
+  user: {
+    id: string;
+    email?: string | null;
+    created_at?: string | null;
+  } | null;
+  loading: boolean;
+  isConfigured: boolean;
+  signOut: () => Promise<unknown>;
+};
+
+const MODE_LABELS: Record<GameMode, string> = {
+  easy: "Facil",
+  normal: "Normal",
+  hard: "Dificil",
+  timed: "Contrarreloj",
+  zen: "Zen",
+};
+
+const MODE_BADGE_STYLES: Record<GameMode, string> = {
+  easy: "border-[#8fd7b1] bg-[#e8f5ee] text-[#1a5c3a]",
+  normal: "border-[#b7d8ff] bg-[#eef5ff] text-[#1f4c91]",
+  hard: "border-[#ffc8bf] bg-[#fff1ee] text-[#9a3727]",
+  timed: "border-[#f4ddb0] bg-[#fff7e6] text-[#865b12]",
+  zen: "border-[#dec8ff] bg-[#f5efff] text-[#6b3ca8]",
+};
+
+const ACHIEVEMENT_REQUIREMENTS: Record<string, string> = {
+  first_session: "1 partida jugada",
+  five_sessions: "5 partidas jugadas",
+  normal_50: "3 partidas en un dia",
+  score_100: "Superar 100 puntos",
+  modes_3: "Jugar todos los modos",
+};
+
+function normalizeMode(value: string | null | undefined): GameMode {
+  if (value === "easy" || value === "normal" || value === "hard" || value === "timed" || value === "zen") {
+    return value;
+  }
+  return "normal";
+}
+
+function formatShortDate(value: string | null | undefined): string {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatDayMonth(value: string | null | undefined): { day: string; month: string } {
+  if (!value) return { day: "--", month: "---" };
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { day: "--", month: "---" };
+
+  return {
+    day: date.toLocaleDateString("es-PE", { day: "2-digit" }),
+    month: date.toLocaleDateString("es-PE", { month: "short" }).replace(".", "").toUpperCase(),
+  };
+}
+
+function formatDuration(value: number | null | undefined): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "-";
+  const totalSeconds = Math.max(0, Math.floor(value / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes === 0) return `${seconds}s`;
+  return `${minutes}m ${seconds}s`;
+}
+
+function TrophyIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path d="M8 4h8v3a4 4 0 0 1-8 0V4Z" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 6H5a2 2 0 0 0 2 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M16 6h3a2 2 0 0 1-2 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 11v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M9 19h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M10 15h4v4h-4z" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function BarsIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <rect x="6" y="11" width="3" height="6" rx="1" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="11" y="8" width="3" height="9" rx="1" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="16" y="5" width="3" height="12" rx="1" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function LeafIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path d="M19 5c-7 0-11 3-11 8a5 5 0 0 0 5 5c5 0 8-4 8-11V5h-2Z" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 16c2-2 4-4 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <rect x="4" y="6" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M9 14h2M13 14h2M9 17h2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function LockIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 10V8a4 4 0 1 1 8 0v2" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="12" cy="15" r="1.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path d="m5 12 4 4 10-10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SpinnerIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function StarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path
+        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.2l-5.6 3 1.1-6.2-4.5-4.4 6.2-.9L12 3Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SproutAchievementIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path d="M12 20v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 13c0-3 2-5 5-5 0 3-2 5-5 5Z" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M12 13c0-2.8-2-5-5-5 0 2.8 2 5 5 5Z" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function FireAchievementIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path
+        d="M13 4c1.7 2.4 1.4 4.6-.6 6.6 2.9-1 4.7 1.3 4.7 4 0 3.1-2.4 5.4-5.1 5.4-2.9 0-5-2.2-5-5.2 0-2.7 1.5-4.7 3.6-6.3.3 1.3.8 2 1.6 2.4.8-2 .9-4.3.8-5.9Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CentennialAchievementIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path
+        d="m12 3 2.6 5.3 5.8.9-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.9L12 3Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
+      <path d="M9.3 12.8h5.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M10.2 10.9h3.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M10.2 14.7h3.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CompassAchievementIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" />
+      <path d="m9 15 2-6 6-2-2 6-6 2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function AchievementIcon({ id, className }: { id: string; className?: string }) {
+  if (id === "first_session") return <SproutAchievementIcon className={className} />;
+  if (id === "five_sessions") return <LeafIcon className={className} />;
+  if (id === "normal_50") return <FireAchievementIcon className={className} />;
+  if (id === "score_100") return <CentennialAchievementIcon className={className} />;
+  if (id === "modes_3") return <CompassAchievementIcon className={className} />;
+  return <StarIcon className={className} />;
+}
+
+export default function PerfilPage() {
+  const router = useRouter();
+  const { session, user, loading, isConfigured, signOut } = useAuth() as AuthShape;
+
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [displayName, setDisplayName] = useState("");
+  const [draftName, setDraftName] = useState("");
+  const [currentAvatarId, setCurrentAvatarId] = useState(DEFAULT_AVATAR_ID);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [score, setScore] = useState(0);
+  const [stats, setStats] = useState<ProfileStatsRow | null>(null);
+  const [recentSessions, setRecentSessions] = useState<SessionRow[]>([]);
+  const [allModesPlayed, setAllModesPlayed] = useState<string[]>([]);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  const [showFullHistory, setShowFullHistory] = useState(false);
+
+  const saveResetTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!loading && isConfigured && !session) {
+      router.replace("/login?next=/perfil");
+    }
+  }, [loading, isConfigured, session, router]);
+
+  useEffect(() => {
+    if (!user || !supabase) return;
+
+    const activeUser = user;
+    const client = supabase;
+
+    let isMounted = true;
+
+    async function loadProfile() {
+      setProfileLoading(true);
+      setStatusMessage("");
+
+      const [profileResult, scoreResult, statsResult, sessionsResult, modesResult, achievementsResult] = await Promise.all([
+        client.from("profiles").select("display_name,avatar_id").eq("id", activeUser.id).maybeSingle(),
+        client.from("ecourp_tacho_scores").select("max_score").eq("user_id", activeUser.id).maybeSingle(),
+        client
+          .from("ecourp_tacho_profile_stats")
+          .select("sessions_count,best_score,avg_score,last_played_at")
+          .eq("user_id", activeUser.id)
+          .maybeSingle(),
+        client
+          .from("ecourp_tacho_sessions")
+          .select("score,game_mode,duration_ms,created_at")
+          .eq("user_id", activeUser.id)
+          .order("created_at", { ascending: false })
+          .limit(100),
+        client.from("ecourp_tacho_sessions").select("game_mode").eq("user_id", activeUser.id),
+        client
+          .from("ecourp_user_achievements")
+          .select("achievement_id")
+          .eq("user_id", activeUser.id),
+      ]);
+
+      if (!isMounted) return;
+
+      const profileData = (profileResult.data as ProfileRow | null) ?? null;
+      const safeName = profileData?.display_name?.trim() ?? "";
+      const safeAvatarId = getAvatarById(profileData?.avatar_id ?? DEFAULT_AVATAR_ID).id;
+      const statsData = (statsResult.data as ProfileStatsRow | null) ?? null;
+      const scoreData = scoreResult.data?.max_score ?? 0;
+      const sessionsData = (sessionsResult.data as SessionRow[] | null) ?? [];
+      const modesData = (modesResult.data as ModeHistoryRow[] | null) ?? [];
+      const modesFromHistory = modesData
+        .map((row) => row.game_mode)
+        .filter((mode): mode is string => typeof mode === "string");
+      const modesFromRecent = sessionsData
+        .map((row) => row.game_mode)
+        .filter((mode): mode is string => typeof mode === "string");
+      const mergedModes = getNormalizedModes([...modesFromHistory, ...modesFromRecent]);
+      const achievementsData =
+        ((achievementsResult.data as Array<{ achievement_id: string | null }> | null) ?? [])
+          .map((row) => row.achievement_id)
+          .filter((id): id is string => Boolean(id));
+
+      setDisplayName(safeName);
+      setDraftName(safeName);
+      setCurrentAvatarId(safeAvatarId);
+      setScore(statsData?.best_score ?? scoreData ?? 0);
+      setStats(statsData);
+      setRecentSessions(sessionsData);
+      setAllModesPlayed(mergedModes);
+      setUnlockedAchievements(achievementsData);
+      setProfileLoading(false);
+      setProfileLoaded(true);
+    }
+
+    loadProfile().catch(() => {
+      if (!isMounted) return;
+      setProfileLoading(false);
+      setStatusMessage("No se pudo cargar tu perfil.");
+      setCurrentAvatarId(DEFAULT_AVATAR_ID);
+      setProfileLoaded(true);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    return () => {
+      if (saveResetTimer.current) {
+        window.clearTimeout(saveResetTimer.current);
+      }
+    };
+  }, []);
+
+  const profileName = useMemo(() => {
+    if (displayName.trim()) return displayName.trim();
+    if (user?.email) return user.email.split("@")[0] || "EcoURP";
+    return "EcoURP";
+  }, [displayName, user]);
+
+  const activeAvatar = useMemo(() => getAvatarById(currentAvatarId), [currentAvatarId]);
+
+  const avatarStats = useMemo<UserStats>(
+    () => ({
+      totalGames: Math.max(0, stats?.sessions_count ?? recentSessions.length ?? 0),
+      maxScore: Math.max(0, score),
+      modesPlayed: allModesPlayed,
+    }),
+    [allModesPlayed, recentSessions.length, score, stats?.sessions_count]
+  );
+
+  const createdAt = useMemo(() => {
+    const value = user?.created_at;
+    if (!value) return "-";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "-";
+    return parsed.toLocaleDateString("es-PE", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  }, [user]);
+
+  const unlockedSet = useMemo(() => new Set(unlockedAchievements), [unlockedAchievements]);
+
+  const favoriteMode = useMemo(() => {
+    if (!recentSessions.length) {
+      return {
+        key: "normal" as GameMode,
+        label: "Sin datos",
+      };
+    }
+
+    const counts = new Map<GameMode, number>();
+    recentSessions.forEach((row) => {
+      const mode = normalizeMode(row.game_mode);
+      counts.set(mode, (counts.get(mode) ?? 0) + 1);
+    });
+
+    let topMode: GameMode = "normal";
+    let topCount = -1;
+
+    counts.forEach((count, mode) => {
+      if (count > topCount) {
+        topCount = count;
+        topMode = mode;
+      }
+    });
+
+    return {
+      key: topMode,
+      label: MODE_LABELS[topMode],
+    };
+  }, [recentSessions]);
+
+  const bestScore = profileLoading ? null : score;
+  const avgScore = typeof stats?.avg_score === "number" ? stats.avg_score : null;
+  const sessionsCount = profileLoading ? null : (stats?.sessions_count ?? 0);
+  const avgProgress = useMemo(() => {
+    if (typeof avgScore !== "number" || !Number.isFinite(avgScore) || !bestScore || bestScore <= 0) {
+      return 0;
+    }
+    return Math.min(100, Math.max(0, (avgScore / bestScore) * 100));
+  }, [avgScore, bestScore]);
+
+  const topFiveSessions = recentSessions.slice(0, 5);
+  const visibleSessions = showFullHistory ? recentSessions : topFiveSessions;
+
+  async function handleSaveName() {
+    if (!supabase || !user || saveState === "saving") return;
+
+    setSaveState("saving");
+    setStatusMessage("");
+
+    const trimmedName = draftName.trim();
+    const { error } = await supabase.from("profiles").upsert({
+      id: user.id,
+      display_name: trimmedName || null,
+    });
+
+    if (error) {
+      setSaveState("error");
+      setStatusMessage("No se pudo guardar el nombre. Verifica la tabla profiles.");
+      return;
+    }
+
+    setDisplayName(trimmedName);
+    setStatusMessage("Nombre actualizado.");
+    setSaveState("success");
+
+    if (saveResetTimer.current) {
+      window.clearTimeout(saveResetTimer.current);
+    }
+
+    saveResetTimer.current = window.setTimeout(() => {
+      setSaveState("idle");
+    }, 1800);
+  }
+
+  async function handleAvatarSave(nextAvatarId: string) {
+    setCurrentAvatarId(getAvatarById(nextAvatarId).id);
+  }
+
+  if (!isConfigured) {
+    return (
+      <div className="min-h-screen bg-[#e8f5ee] px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-[#d8ebdf] bg-[#ffffff] p-8 text-center text-sm text-[#0d2b1a] shadow-sm">
+          <p className="font-semibold">Configuracion pendiente</p>
+          <p className="mt-2 text-[#4a7c5f]">
+            Crea un archivo .env.local con las variables de Supabase y reinicia el servidor de desarrollo.
+          </p>
+          <Link
+            href="/"
+            className="mt-6 inline-flex items-center justify-center rounded-full border border-[#c9e5d6] bg-[#e8f5ee] px-4 py-2 text-sm font-semibold text-[#1a5c3a] transition hover:bg-[#d9efe3]"
+          >
+            Volver al inicio
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading || !session) {
+    return (
+      <div className="min-h-screen bg-[#e8f5ee] px-4 py-8 sm:px-6">
+        <div className="mx-auto flex max-w-3xl flex-col items-center justify-center rounded-2xl border border-[#cde8d9] bg-[#ffffff] p-10 text-center shadow-sm">
+          <SpinnerIcon className="mb-4 h-9 w-9 animate-spin text-[#2d9e6b]" />
+          <p className="text-sm font-semibold text-[#1a5c3a]">Verificando tu sesion...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="min-h-screen bg-[#e8f5ee] px-4 py-8 sm:px-6 lg:px-8"
+      style={{
+        fontFamily: '"Segoe UI Variable", "Trebuchet MS", "Gill Sans", sans-serif',
+        color: "#0d2b1a",
+      }}
+    >
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <section className="relative overflow-hidden rounded-2xl border border-[#2d9e6b]/25 bg-gradient-to-r from-[#1a5c3a] via-[#247a4f] to-[#2d9e6b] p-6 shadow-sm sm:p-8">
+          <div className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-white/10 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-10 left-24 h-36 w-36 rounded-full bg-[#c8ecd8]/35 blur-2xl" />
+
+          <div className="relative z-10 flex flex-col gap-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-medium text-[#c8ecd8] backdrop-blur-sm">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#67e39c]" />
+                Sesion activa
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href="/"
+                  className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                >
+                  ← Inicio
+                </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await signOut();
+                    router.replace("/login");
+                  }}
+                  className="rounded-full border border-white/30 bg-white px-4 py-2 text-sm font-semibold text-[#1a5c3a] transition hover:bg-[#e8f5ee]"
+                >
+                  Cerrar sesion
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 sm:gap-5">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-white bg-[#2d9e6b] text-white shadow-sm">
+                <span key={activeAvatar.id} className="avatar-bounce inline-block text-[40px] leading-none">
+                  {profileLoaded ? activeAvatar.emoji : "🌱"}
+                </span>
+              </div>
+
+              <div className="min-w-0">
+                <h1 className="truncate text-3xl font-bold text-white sm:text-4xl">{profileName}</h1>
+                <p className="mt-1 truncate text-sm font-medium text-[#c8ecd8]">{user?.email ?? "-"}</p>
+                <div className="mt-3 inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-[#e8f5ee]">
+                  Cuenta creada: {createdAt}
+                </div>
+                <div className="mt-4 max-w-3xl">
+                  <AvatarSelector
+                    currentAvatarId={currentAvatarId}
+                    userStats={avatarStats}
+                    onSave={handleAvatarSave}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <article className="rounded-2xl border border-[#2d9e6b] bg-[#fefce8] p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Maximo puntaje</p>
+                <p className="mt-2 text-4xl font-bold text-[#0d2b1a]">{bestScore ?? "..."}</p>
+              </div>
+              <TrophyIcon className="h-8 w-8 text-[#1a5c3a]" />
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Promedio</p>
+                <p className="mt-2 text-4xl font-bold text-[#0d2b1a]">
+                  {profileLoading ? "..." : typeof avgScore === "number" ? avgScore.toFixed(1) : "-"}
+                </p>
+              </div>
+              <BarsIcon className="h-8 w-8 text-[#1a5c3a]" />
+            </div>
+
+            <div className="mt-4">
+              <div className="h-2 w-full rounded-full bg-[#e8f5ee]">
+                <div
+                  className="h-2 rounded-full bg-[#2d9e6b] transition-all"
+                  style={{ width: `${avgProgress.toFixed(1)}%` }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-[#4a7c5f]">{Math.round(avgProgress)}% de tu maximo puntaje</p>
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Partidas jugadas</p>
+                <p className="mt-2 text-4xl font-bold text-[#0d2b1a]">{sessionsCount ?? "..."}</p>
+              </div>
+              <LeafIcon className="h-8 w-8 text-[#1a5c3a]" />
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Ultima partida</p>
+                <p className="mt-2 text-4xl font-bold text-[#0d2b1a]">
+                  {profileLoading ? "..." : formatShortDate(stats?.last_played_at)}
+                </p>
+              </div>
+              <CalendarIcon className="h-8 w-8 text-[#1a5c3a]" />
+            </div>
+          </article>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-6 shadow-sm">
+            <div>
+              <h2 className="text-xl font-bold text-[#0d2b1a]">Datos personales</h2>
+              <p className="mt-1 text-sm text-[#4a7c5f]">Administra tu identidad dentro de EcoURP.</p>
+            </div>
+
+            <div className="mt-6 space-y-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Correo</p>
+                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[#d4e9dc] bg-[#e8f5ee] px-4 py-3 text-sm font-semibold text-[#0d2b1a]">
+                  <LockIcon className="h-5 w-5 shrink-0 text-[#4a7c5f]" />
+                  <span className="max-w-full overflow-x-auto whitespace-nowrap">{user?.email ?? "-"}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">
+                  Nombre para mostrar
+                </label>
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="text"
+                    value={draftName}
+                    onChange={(event) => setDraftName(event.target.value)}
+                    placeholder="Tu nombre"
+                    className="w-full flex-1 rounded-2xl border border-[#cfe6d7] bg-white px-4 py-3 text-sm text-[#0d2b1a] outline-none transition focus:border-[#2d9e6b] focus:ring-2 focus:ring-[#c8ecd8]"
+                  />
+                  <button
+                    type="button"
+                    disabled={saveState === "saving"}
+                    onClick={handleSaveName}
+                    className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-2xl bg-[#2d9e6b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#247f57] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {saveState === "saving" ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : null}
+                    {saveState === "success" ? <CheckIcon className="h-4 w-4 animate-bounce" /> : null}
+                    <span>
+                      {saveState === "saving"
+                        ? "Guardando..."
+                        : saveState === "success"
+                          ? "Guardado"
+                          : "Guardar"}
+                    </span>
+                  </button>
+                </div>
+                {statusMessage ? (
+                  <p
+                    className={`mt-2 text-xs font-semibold ${
+                      saveState === "error" ? "text-[#9a3727]" : "text-[#2d9e6b]"
+                    }`}
+                  >
+                    {statusMessage}
+                  </p>
+                ) : null}
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Modo favorito</p>
+                <div className="mt-2">
+                  <span
+                    className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                      MODE_BADGE_STYLES[favoriteMode.key]
+                    }`}
+                  >
+                    {favoriteMode.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-6 shadow-sm">
+            <div>
+              <h2 className="text-xl font-bold text-[#0d2b1a]">Logros</h2>
+              <p className="mt-1 text-sm text-[#4a7c5f]">Completa desafios para desbloquear insignias.</p>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
+              {ACHIEVEMENTS.map((achievement) => {
+                const unlocked = unlockedSet.has(achievement.id);
+                const requirement = ACHIEVEMENT_REQUIREMENTS[achievement.id] ?? achievement.requirement;
+
+                return (
+                  <div
+                    key={achievement.id}
+                    title={`Requisito: ${requirement}`}
+                    className={`group relative rounded-2xl border p-3 shadow-sm transition duration-200 hover:scale-105 hover:shadow-md ${
+                      unlocked
+                        ? "border-[#cfe6d7] bg-[#ffffff]"
+                        : "border-[#dce8e1] bg-[#f7fbf9] grayscale"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#c8ecd8] bg-[#e8f5ee] text-[#1a5c3a]">
+                        <AchievementIcon id={achievement.id} className="h-6 w-6" />
+                      </div>
+
+                      {unlocked ? (
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2d9e6b] text-white">
+                          <CheckIcon className="h-3.5 w-3.5" />
+                        </span>
+                      ) : (
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#cfded5] bg-white text-[#4a7c5f]">
+                          <LockIcon className="h-3 w-3" />
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-3 text-sm font-semibold text-[#0d2b1a]">{achievement.title}</p>
+                    <p className="mt-1 text-xs text-[#6c8f7a]">{achievement.description}</p>
+
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 rounded-xl border border-[#cfe6d7] bg-white p-2 text-xs text-[#1a5c3a] opacity-0 shadow-sm transition group-hover:opacity-100">
+                      Requisito exacto: {requirement}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        </section>
+
+        <section className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold text-[#0d2b1a]">Actividad reciente</h2>
+              <p className="mt-1 text-sm text-[#4a7c5f]">Tus ultimas partidas registradas en EcoURP.</p>
+            </div>
+            <span className="rounded-full border border-[#cfe6d7] bg-[#e8f5ee] px-3 py-1 text-xs font-semibold text-[#2d9e6b]">
+              Mostrando {Math.min(5, recentSessions.length)} recientes
+            </span>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-3">
+            {visibleSessions.length ? (
+              visibleSessions.map((sessionRow, index) => {
+                const mode = normalizeMode(sessionRow.game_mode);
+                const dateBadge = formatDayMonth(sessionRow.created_at);
+                const sessionScore = typeof sessionRow.score === "number" ? sessionRow.score : 0;
+                const isBest = !!bestScore && sessionScore > 0 && sessionScore === bestScore;
+
+                return (
+                  <article
+                    key={`${sessionRow.created_at ?? "sin-fecha"}-${index}`}
+                    className="flex flex-wrap items-center gap-4 rounded-2xl border border-[#d9ece1] bg-[#fbfefd] px-4 py-3 shadow-sm"
+                  >
+                    <div className="flex min-w-[68px] flex-col items-center rounded-xl border border-[#cfe6d7] bg-[#e8f5ee] px-2 py-1 text-center text-[#1a5c3a]">
+                      <span className="text-lg font-bold leading-none">{dateBadge.day}</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide">{dateBadge.month}</span>
+                    </div>
+
+                    <span
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+                        MODE_BADGE_STYLES[mode]
+                      }`}
+                    >
+                      {MODE_LABELS[mode]}
+                    </span>
+
+                    <div className="min-w-[110px]">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Puntaje</p>
+                      <p className="text-2xl font-bold text-[#0d2b1a]">{sessionScore}</p>
+                    </div>
+
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-[#cfe6d7] bg-white px-3 py-1.5 text-xs font-semibold text-[#4a7c5f]">
+                      <ClockIcon className="h-4 w-4 text-[#2d9e6b]" />
+                      {formatDuration(sessionRow.duration_ms)}
+                    </div>
+
+                    {isBest ? (
+                      <div className="ml-auto inline-flex items-center gap-1 rounded-full border border-[#f1d276] bg-[#fff8dc] px-3 py-1 text-xs font-semibold text-[#8a6a14]">
+                        <StarIcon className="h-4 w-4" />
+                        Mejor partida
+                      </div>
+                    ) : (
+                      <div className="ml-auto text-xs text-[#8ba693]">Sin record</div>
+                    )}
+                  </article>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[#cfe6d7] bg-[#f7fbf9] px-4 py-8 text-center text-sm text-[#4a7c5f]">
+                Aun no hay partidas registradas.
+              </div>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <button
+              type="button"
+              onClick={() => setShowFullHistory((value) => !value)}
+              disabled={recentSessions.length <= 5}
+              className="inline-flex items-center rounded-full border border-[#cfe6d7] bg-[#e8f5ee] px-4 py-2 text-sm font-semibold text-[#1a5c3a] transition hover:bg-[#d9efe3] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {showFullHistory ? "Ver solo ultimas 5" : "Ver historial completo"}
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

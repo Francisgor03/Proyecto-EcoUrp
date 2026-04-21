@@ -16,7 +16,7 @@ export default function HomeCtas({ className = "" }) {
         Conocer mas
       </a>
       <Link
-        href="/juego"
+        href="/game"
         className="inline-flex items-center justify-center rounded-2xl border-2 border-eco-emerald-600 bg-white px-8 py-3.5 text-sm font-semibold text-eco-emerald-800 shadow-sm transition hover:bg-eco-emerald-50"
       >
         Probar el juego
