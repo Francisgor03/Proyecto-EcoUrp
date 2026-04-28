@@ -444,7 +444,7 @@ export class GameEngine {
     const waste = new Waste({
       id: `w-${this.spawnedWasteCount}`,
       type,
-      texture: this.assets.wastes[type],
+      textures: this.assets.wastes[type],
       x,
       y: -36,
       fallSpeed: this.currentDifficulty.fallSpeed,

@@ -3,6 +3,18 @@ import type { StaticImageData } from "next/image";
 import fondoPruebaImage from "@/assets/images/FondoPrueba.jpg";
 import heroImage from "@/assets/images/Hero.jpg";
 import datosImage from "@/assets/images/Datos.jpg";
+import sprOrganicoBananaImage from "@/assets/sprites/spr_organico_banana.png";
+import sprOrganicoHuevoImage from "@/assets/sprites/spr_organico_huevo.png";
+import sprOrganicoManzanaImage from "@/assets/sprites/spr_organico_manzana.png";
+import sprPapelBolsaImage from "@/assets/sprites/spr_papel_bolsa.png";
+import sprPapelCajaImage from "@/assets/sprites/spr_papel_caja.png";
+import sprPapelDiarioImage from "@/assets/sprites/spr_papel_diario.png";
+import sprPlasticoBotellaImage from "@/assets/sprites/spr_plastico_botella.png";
+import sprPlasticoDetergenteImage from "@/assets/sprites/spr_plastico_detergente.png";
+import sprPlasticoVasoImage from "@/assets/sprites/spr_plastico_vaso.png";
+import sprVidrioBotellaImage from "@/assets/sprites/spr_vidrio_botella.png";
+import sprVidrioFrascoImage from "@/assets/sprites/spr_vidrio_frasco.png";
+import sprVidrioTarroImage from "@/assets/sprites/spr_vidrio_tarro.png";
 import { WASTE_IDS, getWasteType, type WasteTypeId } from "@/game/config/wasteTypes";
 
 const ASSET_KEYS = {
@@ -25,8 +37,15 @@ export interface LoadedGameAssets {
   collector: Texture;
   errorIcon: Texture;
   particle: Texture;
-  wastes: Record<WasteTypeId, Texture>;
+  wastes: Record<WasteTypeId, Texture[]>;
 }
+
+const WASTE_SPRITE_SOURCES: Record<WasteTypeId, StaticImageData[]> = {
+  plastic: [sprPlasticoBotellaImage, sprPlasticoDetergenteImage, sprPlasticoVasoImage],
+  paper: [sprPapelBolsaImage, sprPapelCajaImage, sprPapelDiarioImage],
+  glass: [sprVidrioBotellaImage, sprVidrioFrascoImage, sprVidrioTarroImage],
+  organic: [sprOrganicoBananaImage, sprOrganicoHuevoImage, sprOrganicoManzanaImage],
+};
 
 let assetCachePromise: Promise<LoadedGameAssets> | null = null;
 
@@ -109,6 +128,25 @@ function getTexture(alias: AssetKey | string): Texture {
   return Assets.get(alias) as Texture;
 }
 
+async function loadWasteVariantTexture(
+  wasteId: WasteTypeId,
+  variantSource: StaticImageData,
+  variantIndex: number,
+): Promise<Texture> {
+  try {
+    return (await Assets.load(resolveImageSource(variantSource))) as Texture;
+  } catch (error) {
+    const waste = getWasteType(wasteId);
+
+    console.warn(
+      `[EcoURP] No se pudo cargar sprite ${wasteId} v${variantIndex + 1}. Usando fallback SVG.`,
+      error,
+    );
+
+    return Texture.from(createWasteSvg(asHex(waste.colorNumber), waste.shortLabel));
+  }
+}
+
 export async function preloadGameAssets(): Promise<LoadedGameAssets> {
   if (assetCachePromise) {
     return assetCachePromise;
@@ -122,11 +160,6 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
     registerAsset(ASSET_KEYS.errorIcon, createErrorIconSvg());
     registerAsset(ASSET_KEYS.particle, createParticleSvg());
 
-    for (const wasteId of WASTE_IDS) {
-      const waste = getWasteType(wasteId);
-      registerAsset(`waste-${wasteId}`, createWasteSvg(asHex(waste.colorNumber), waste.shortLabel));
-    }
-
     await Assets.load([
       ASSET_KEYS.backgroundFar,
       ASSET_KEYS.backgroundMid,
@@ -134,12 +167,22 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
       ASSET_KEYS.collector,
       ASSET_KEYS.errorIcon,
       ASSET_KEYS.particle,
-      ...WASTE_IDS.map((wasteId) => `waste-${wasteId}`),
     ]);
 
-    const wasteTextures = {} as Record<WasteTypeId, Texture>;
+    const wasteTextures = {} as Record<WasteTypeId, Texture[]>;
     for (const wasteId of WASTE_IDS) {
-      wasteTextures[wasteId] = getTexture(`waste-${wasteId}`);
+      const variants = await Promise.all(
+        WASTE_SPRITE_SOURCES[wasteId].map((source, index) =>
+          loadWasteVariantTexture(wasteId, source, index),
+        ),
+      );
+
+      if (variants.length === 0) {
+        const waste = getWasteType(wasteId);
+        variants.push(Texture.from(createWasteSvg(asHex(waste.colorNumber), waste.shortLabel)));
+      }
+
+      wasteTextures[wasteId] = variants;
     }
 
     return {

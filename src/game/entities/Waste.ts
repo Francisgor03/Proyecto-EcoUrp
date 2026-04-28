@@ -1,10 +1,10 @@
-import { Container, Sprite, type Texture } from "pixi.js";
+import { Container, Sprite, Texture } from "pixi.js";
 import type { WasteTypeId } from "@/game/config/wasteTypes";
 
 export interface WasteOptions {
   id: string;
   type: WasteTypeId;
-  texture: Texture;
+  textures: Texture[];
   x: number;
   y: number;
   fallSpeed: number;
@@ -36,10 +36,16 @@ export class Waste extends Container {
     this.originX = options.x;
     this._fallSpeed = options.fallSpeed;
 
-    this.sprite = new Sprite(options.texture);
+    const availableTextures =
+      options.textures.length > 0
+        ? options.textures
+        : [Texture.WHITE];
+    const variantIndex = Math.floor(Math.random() * availableTextures.length);
+
+    this.sprite = new Sprite(availableTextures[variantIndex]);
     this.sprite.anchor.set(0.5);
 
-    const baseScale = 0.42 + Math.random() * 0.12;
+    const baseScale = 0.26 + Math.random() * 0.1;
     this.sprite.scale.set(baseScale);
 
     this.wobbleAmplitude = 6 + Math.random() * 12;
