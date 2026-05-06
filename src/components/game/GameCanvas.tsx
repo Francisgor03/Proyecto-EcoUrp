@@ -10,10 +10,11 @@ import type { GameStateBridge } from "@/game/core/GameEngine";
 export interface GameCanvasProps {
   state: GameState;
   bridge: GameStateBridge;
+  isFullscreen?: boolean;
   className?: string;
 }
 
-export default function GameCanvas({ state, bridge, className = "" }: GameCanvasProps) {
+export default function GameCanvas({ state, bridge, isFullscreen = false, className = "" }: GameCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<GameEngine | null>(null);
@@ -100,14 +101,18 @@ export default function GameCanvas({ state, bridge, className = "" }: GameCanvas
     engine.stopRound();
   }, [state.phase]);
 
+  const wrapperClassName = isFullscreen
+    ? `relative w-full h-screen flex-1 overscroll-contain overflow-hidden bg-gradient-to-b from-eco-emerald-100 to-eco-emerald-50 ${className}`
+    : `relative w-full min-h-[min(68dvh,600px)] overscroll-contain overflow-hidden rounded-2xl border border-eco-emerald-200/80 bg-gradient-to-b from-eco-emerald-100 to-eco-emerald-50 shadow-xl shadow-eco-emerald-900/10 sm:min-h-[min(84dvh,820px)] sm:rounded-3xl ${className}`;
+
   return (
     <div
       ref={wrapperRef}
-      className={`relative w-full overflow-hidden rounded-3xl border border-eco-emerald-200/80 bg-gradient-to-b from-eco-emerald-100 to-eco-emerald-50 shadow-xl shadow-eco-emerald-900/10 ${className}`}
-      style={{ minHeight: "min(72vh, 620px)", touchAction: "none" }}
+      className={wrapperClassName}
+      style={{ touchAction: "none" }}
       aria-label="Canvas Eco-Catch con Pixi"
     >
-      <canvas ref={canvasRef} className="h-full w-full" />
+      <canvas ref={canvasRef} className="h-full w-full touch-none" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.48),_transparent_54%)]" />
     </div>
   );

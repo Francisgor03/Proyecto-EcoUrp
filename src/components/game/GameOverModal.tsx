@@ -119,10 +119,10 @@ export default function GameOverModal({
     >
       <div
         ref={cardRef}
-        className="w-full max-w-xl rounded-3xl border border-eco-emerald-200 bg-white p-6 shadow-2xl shadow-eco-emerald-900/20 sm:p-8"
+        className="w-full max-w-xl rounded-3xl border border-eco-emerald-200 bg-white p-5 shadow-2xl shadow-eco-emerald-900/20 sm:p-8"
       >
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-eco-emerald-600">Partida terminada</p>
-        <h2 id="ecourp-game-over-title" className="mt-2 text-3xl font-black text-eco-emerald-950">
+        <h2 id="ecourp-game-over-title" className="mt-2 text-2xl font-black text-eco-emerald-950 sm:text-3xl">
           Eco-Catch
         </h2>
         <p className="mt-1 text-sm text-eco-emerald-700">Resumen de tu rendimiento final.</p>
@@ -130,19 +130,21 @@ export default function GameOverModal({
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-eco-emerald-100 bg-eco-emerald-50/70 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-600">Score</p>
-            <p className="mt-1 text-2xl font-black text-eco-emerald-950">{summary.score}</p>
+            <p className="mt-1 text-xl font-black text-eco-emerald-950 sm:text-2xl">{summary.score}</p>
           </div>
           <div className="rounded-2xl border border-eco-emerald-100 bg-white p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-600">Precision</p>
-            <p className="mt-1 text-2xl font-black text-eco-emerald-950">{summary.accuracy.toFixed(1)}%</p>
+            <p className="mt-1 text-xl font-black text-eco-emerald-950 sm:text-2xl">{summary.accuracy.toFixed(1)}%</p>
           </div>
           <div className="rounded-2xl border border-eco-emerald-100 bg-white p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-600">Duracion</p>
-            <p className="mt-1 text-xl font-black text-eco-emerald-950">{formatDuration(summary.durationMs)}</p>
+            <p className="mt-1 text-lg font-black text-eco-emerald-950 sm:text-xl">
+              {formatDuration(summary.durationMs)}
+            </p>
           </div>
           <div className="rounded-2xl border border-eco-emerald-100 bg-white p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-600">Racha maxima</p>
-            <p className="mt-1 text-xl font-black text-eco-emerald-950">{summary.bestStreak}</p>
+            <p className="mt-1 text-lg font-black text-eco-emerald-950 sm:text-xl">{summary.bestStreak}</p>
           </div>
         </div>
 

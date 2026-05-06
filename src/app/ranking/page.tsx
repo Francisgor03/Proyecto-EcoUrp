@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { ACHIEVEMENTS } from "@/lib/achievementsCatalog";
+import { normUserId } from "@/lib/normUserId";
 import RankingUserCard from "@/components/ranking/RankingUserCard";
 import RankingTable from "@/components/ranking/RankingTable";
 
@@ -92,84 +94,136 @@ export default async function RankingPage({
 
   const profileNames = Object.fromEntries(profileMap.entries());
 
+  // Logros por jugador. Requiere en Supabase la politica "Lectura publica logros desbloqueados ranking"
+  // (ver docs/supabase_schema.sql); si solo existe "Lectura propia logros", solo veras tus filas.
+  let achievementsMap: Record<string, string[]> = {};
+  const rankedUserIds = rankingRows.map((row) => row.user_id).filter(Boolean);
+  if (rankedUserIds.length > 0) {
+    const { data: achRows, error: achError } = await supabase
+      .from("ecourp_user_achievements")
+      .select("user_id,achievement_id")
+      .in("user_id", rankedUserIds);
+
+    if (achError && process.env.NODE_ENV === "development") {
+      console.warn("[ranking] ecourp_user_achievements:", achError.message);
+    }
+
+    if (achRows?.length) {
+      const map: Record<string, string[]> = {};
+      for (const row of achRows) {
+        if (!row.user_id || !row.achievement_id) continue;
+        const uid = normUserId(row.user_id);
+        if (!map[uid]) map[uid] = [];
+        map[uid].push(String(row.achievement_id).trim());
+      }
+      achievementsMap = map;
+    }
+  }
+
+  if (user?.id) {
+    const viewerId = normUserId(user.id);
+    if (!achievementsMap[viewerId]?.length) {
+      const { data: mine } = await supabase
+        .from("ecourp_user_achievements")
+        .select("achievement_id")
+        .eq("user_id", user.id);
+
+      const ids =
+        mine
+          ?.map((r) => String(r.achievement_id).trim())
+          .filter((id): id is string => Boolean(id)) ?? [];
+      if (ids.length) {
+        achievementsMap = { ...achievementsMap, [viewerId]: ids };
+      }
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-eco-emerald-100/70 via-eco-emerald-50 to-eco-emerald-50 px-4 py-10 sm:px-6">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-500">
-              Ranking EcoURP
-            </p>
-            <h1 className="text-2xl font-bold text-eco-emerald-950 sm:text-3xl">
-              Tabla de posiciones
-            </h1>
-            <p className="mt-2 text-sm text-eco-emerald-700">
-              Top {MAX_ROWS} jugadores en modo {MODE_LABELS[mode].toLowerCase()}.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/"
-              className="rounded-full border border-eco-emerald-300 bg-white px-4 py-2 text-sm font-medium text-eco-emerald-800 shadow-sm hover:bg-eco-emerald-50"
-            >
-              ← Inicio
-            </Link>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {Object.entries(MODE_LABELS).map(([value, label]) => (
-            <Link
-              key={value}
-              href={`/ranking?mode=${value}${range === "weekly" ? "&range=weekly" : ""}`}
-              className={`rounded-full border px-4 py-2 text-xs font-semibold ${
-                mode === value
-                  ? "border-eco-emerald-500 bg-eco-emerald-600 text-white"
-                  : "border-eco-emerald-200 bg-white text-eco-emerald-700"
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href={`/ranking?mode=${mode}`}
-            className={`rounded-full border px-4 py-2 text-xs font-semibold ${
-              range === "all"
-                ? "border-eco-emerald-500 bg-eco-emerald-600 text-white"
-                : "border-eco-emerald-200 bg-white text-eco-emerald-700"
-            }`}
-          >
-            Todo el tiempo
-          </Link>
-          <Link
-            href={`/ranking?mode=${mode}&range=weekly`}
-            className={`rounded-full border px-4 py-2 text-xs font-semibold ${
-              range === "weekly"
-                ? "border-eco-emerald-500 bg-eco-emerald-600 text-white"
-                : "border-eco-emerald-200 bg-white text-eco-emerald-700"
-            }`}
-          >
-            Ultimos 7 dias
-          </Link>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-3xl border border-eco-emerald-200 bg-white/95 p-6 shadow-lg shadow-eco-emerald-900/5">
-            <h2 className="text-lg font-semibold text-eco-emerald-900">Ranking</h2>
-            <p className="mt-1 text-sm text-eco-emerald-700">
-              Puntajes ordenados por record.
-            </p>
-
-            <div className="mt-6 overflow-hidden rounded-2xl border border-eco-emerald-100">
-              <RankingTable rows={rankingRows} profileNames={profileNames} />
+    <div className="min-h-screen bg-gradient-to-b from-eco-emerald-100/70 via-eco-emerald-50 to-eco-emerald-50 px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-6xl">
+        <section className="rounded-3xl border border-eco-emerald-200 bg-white/95 p-5 shadow-lg shadow-eco-emerald-900/5 sm:p-8">
+          <div className="border-b border-eco-emerald-100 pb-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-500">
+                Ranking EcoURP
+              </p>
+              <h1 className="mt-1 text-2xl font-bold text-eco-emerald-950 sm:text-3xl">
+                Tabla de posiciones
+              </h1>
+              <p className="mt-2 text-sm text-eco-emerald-700">
+                Top {MAX_ROWS} jugadores en modo {MODE_LABELS[mode].toLowerCase()}.
+              </p>
             </div>
-          </section>
+          </div>
 
-          <RankingUserCard rows={rankingRows} />
-        </div>
+          <div className="mt-5 rounded-2xl border border-eco-emerald-100 bg-eco-emerald-50/40 p-4 sm:p-5">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+              <div className="min-w-0 flex-1 space-y-5">
+                <div>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-eco-emerald-600">
+                    Modo de juego
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(MODE_LABELS).map(([value, label]) => (
+                      <Link
+                        key={value}
+                        href={`/ranking?mode=${value}${range === "weekly" ? "&range=weekly" : ""}`}
+                        className={`rounded-full border px-4 py-2 text-xs font-semibold sm:text-sm ${
+                          mode === value
+                            ? "border-eco-emerald-500 bg-eco-emerald-600 text-white"
+                            : "border-eco-emerald-200 bg-white text-eco-emerald-700 shadow-sm"
+                        }`}
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-eco-emerald-600">
+                    Periodo
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/ranking?mode=${mode}`}
+                      className={`rounded-full border px-4 py-2 text-xs font-semibold sm:text-sm ${
+                        range === "all"
+                          ? "border-eco-emerald-500 bg-eco-emerald-600 text-white"
+                          : "border-eco-emerald-200 bg-white text-eco-emerald-700 shadow-sm"
+                      }`}
+                    >
+                      Todo el tiempo
+                    </Link>
+                    <Link
+                      href={`/ranking?mode=${mode}&range=weekly`}
+                      className={`rounded-full border px-4 py-2 text-xs font-semibold sm:text-sm ${
+                        range === "weekly"
+                          ? "border-eco-emerald-500 bg-eco-emerald-600 text-white"
+                          : "border-eco-emerald-200 bg-white text-eco-emerald-700 shadow-sm"
+                      }`}
+                    >
+                      Ultimos 7 dias
+                    </Link>
+                  </div>
+                </div>
+              </div>
+              <RankingUserCard rows={rankingRows} compact />
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-eco-emerald-900">Clasificacion</h2>
+            <p className="mt-1 text-sm text-eco-emerald-700">Puntajes ordenados por record.</p>
+            <div className="mt-4 rounded-2xl border border-eco-emerald-100 bg-white">
+              <RankingTable
+                rows={rankingRows}
+                profileNames={profileNames}
+                achievementsMap={achievementsMap}
+                achievements={ACHIEVEMENTS}
+              />
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

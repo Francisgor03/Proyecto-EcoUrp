@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ACHIEVEMENTS } from "@/lib/achievementsCatalog";
-import AvatarSelector from "../../../components/profile/AvatarSelector";
+import AvatarSelector from "@/components/profile/AvatarSelector";
 import {
   DEFAULT_AVATAR_ID,
   getAvatarById,
   getNormalizedModes,
   type UserStats,
-} from "../../../config/avatars";
+} from "@/config/avatars";
 
 type GameMode = "easy" | "normal" | "hard" | "timed" | "zen";
 
@@ -523,51 +523,45 @@ export default function PerfilPage() {
       }}
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <section className="relative overflow-hidden rounded-2xl border border-[#2d9e6b]/25 bg-gradient-to-r from-[#1a5c3a] via-[#247a4f] to-[#2d9e6b] p-6 shadow-sm sm:p-8">
+        <section className="relative overflow-hidden rounded-2xl border border-[#2d9e6b]/25 bg-gradient-to-r from-[#1a5c3a] via-[#247a4f] to-[#2d9e6b] p-4 shadow-sm sm:p-6 lg:p-8">
           <div className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-white/10 blur-2xl" />
           <div className="pointer-events-none absolute -bottom-10 left-24 h-36 w-36 rounded-full bg-[#c8ecd8]/35 blur-2xl" />
 
-          <div className="relative z-10 flex flex-col gap-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-medium text-[#c8ecd8] backdrop-blur-sm">
-                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#67e39c]" />
+          <div className="relative z-10 flex flex-col gap-4 sm:gap-6">
+            <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-[#c8ecd8] backdrop-blur-sm sm:gap-2 sm:px-3 sm:py-1.5 sm:text-xs">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-[#67e39c] sm:h-2.5 sm:w-2.5" />
                 Sesion activa
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Link
-                  href="/"
-                  className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-                >
-                  ← Inicio
-                </Link>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={async () => {
                     await signOut();
                     router.replace("/login");
                   }}
-                  className="rounded-full border border-white/30 bg-white px-4 py-2 text-sm font-semibold text-[#1a5c3a] transition hover:bg-[#e8f5ee]"
+                  className="rounded-full border border-white/30 bg-white px-3 py-1.5 text-xs font-semibold text-[#1a5c3a] transition hover:bg-[#e8f5ee] sm:px-4 sm:py-2 sm:text-sm"
                 >
                   Cerrar sesion
                 </button>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 sm:gap-5">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-white bg-[#2d9e6b] text-white shadow-sm">
-                <span key={activeAvatar.id} className="avatar-bounce inline-block text-[40px] leading-none">
+            <div className="flex items-center gap-3 sm:gap-5">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#2d9e6b] text-white shadow-sm sm:h-20 sm:w-20 sm:border-[3px]">
+                <span key={activeAvatar.id} className="avatar-bounce inline-block text-[28px] leading-none sm:text-[40px]">
                   {profileLoaded ? activeAvatar.emoji : "🌱"}
                 </span>
               </div>
 
-              <div className="min-w-0">
-                <h1 className="truncate text-3xl font-bold text-white sm:text-4xl">{profileName}</h1>
-                <p className="mt-1 truncate text-sm font-medium text-[#c8ecd8]">{user?.email ?? "-"}</p>
-                <div className="mt-3 inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-[#e8f5ee]">
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-xl font-bold text-white sm:text-3xl lg:text-4xl">{profileName}</h1>
+                <p className="mt-0.5 truncate text-xs font-medium text-[#c8ecd8] sm:mt-1 sm:text-sm">{user?.email ?? "-"}</p>
+                <div className="mt-2 inline-flex items-center rounded-full border border-white/30 bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#e8f5ee] sm:mt-3 sm:px-3 sm:py-1 sm:text-xs">
                   Cuenta creada: {createdAt}
                 </div>
-                <div className="mt-4 max-w-3xl">
+                <div className="mt-3 max-w-3xl sm:mt-4">
                   <AvatarSelector
                     currentAvatarId={currentAvatarId}
                     userStats={avatarStats}
@@ -579,67 +573,67 @@ export default function PerfilPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <article className="rounded-2xl border border-[#2d9e6b] bg-[#fefce8] p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          <article className="rounded-2xl border border-[#2d9e6b] bg-[#fefce8] p-3 shadow-sm sm:p-5">
+            <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Maximo puntaje</p>
-                <p className="mt-2 text-4xl font-bold text-[#0d2b1a]">{bestScore ?? "..."}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#2d9e6b] sm:text-xs">Maximo puntaje</p>
+                <p className="mt-1 text-2xl font-bold text-[#0d2b1a] sm:mt-2 sm:text-4xl">{bestScore ?? "..."}</p>
               </div>
-              <TrophyIcon className="h-8 w-8 text-[#1a5c3a]" />
+              <TrophyIcon className="h-6 w-6 text-[#1a5c3a] sm:h-8 sm:w-8" />
             </div>
           </article>
 
-          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-3 shadow-sm sm:p-5">
+            <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Promedio</p>
-                <p className="mt-2 text-4xl font-bold text-[#0d2b1a]">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#2d9e6b] sm:text-xs">Promedio</p>
+                <p className="mt-1 text-2xl font-bold text-[#0d2b1a] sm:mt-2 sm:text-4xl">
                   {profileLoading ? "..." : typeof avgScore === "number" ? avgScore.toFixed(1) : "-"}
                 </p>
               </div>
-              <BarsIcon className="h-8 w-8 text-[#1a5c3a]" />
+              <BarsIcon className="h-6 w-6 text-[#1a5c3a] sm:h-8 sm:w-8" />
             </div>
 
-            <div className="mt-4">
-              <div className="h-2 w-full rounded-full bg-[#e8f5ee]">
+            <div className="mt-3 sm:mt-4">
+              <div className="h-1.5 w-full rounded-full bg-[#e8f5ee] sm:h-2">
                 <div
-                  className="h-2 rounded-full bg-[#2d9e6b] transition-all"
+                  className="h-1.5 rounded-full bg-[#2d9e6b] transition-all sm:h-2"
                   style={{ width: `${avgProgress.toFixed(1)}%` }}
                 />
               </div>
-              <p className="mt-1 text-xs text-[#4a7c5f]">{Math.round(avgProgress)}% de tu maximo puntaje</p>
+              <p className="mt-1 text-[10px] text-[#4a7c5f] sm:text-xs">{Math.round(avgProgress)}% de tu maximo</p>
             </div>
           </article>
 
-          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-3 shadow-sm sm:p-5">
+            <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Partidas jugadas</p>
-                <p className="mt-2 text-4xl font-bold text-[#0d2b1a]">{sessionsCount ?? "..."}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#2d9e6b] sm:text-xs">Partidas</p>
+                <p className="mt-1 text-2xl font-bold text-[#0d2b1a] sm:mt-2 sm:text-4xl">{sessionsCount ?? "..."}</p>
               </div>
-              <LeafIcon className="h-8 w-8 text-[#1a5c3a]" />
+              <LeafIcon className="h-6 w-6 text-[#1a5c3a] sm:h-8 sm:w-8" />
             </div>
           </article>
 
-          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-3 shadow-sm sm:p-5">
+            <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Ultima partida</p>
-                <p className="mt-2 text-4xl font-bold text-[#0d2b1a]">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#2d9e6b] sm:text-xs">Ultima partida</p>
+                <p className="mt-1 text-lg font-bold text-[#0d2b1a] sm:mt-2 sm:text-3xl">
                   {profileLoading ? "..." : formatShortDate(stats?.last_played_at)}
                 </p>
               </div>
-              <CalendarIcon className="h-8 w-8 text-[#1a5c3a]" />
+              <CalendarIcon className="h-6 w-6 text-[#1a5c3a] sm:h-8 sm:w-8" />
             </div>
           </article>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[3fr_2fr]">
-          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-6 shadow-sm">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[3fr_2fr]">
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-4 shadow-sm sm:p-6">
             <div>
-              <h2 className="text-xl font-bold text-[#0d2b1a]">Datos personales</h2>
-              <p className="mt-1 text-sm text-[#4a7c5f]">Administra tu identidad dentro de EcoURP.</p>
+              <h2 className="text-lg font-bold text-[#0d2b1a] sm:text-xl">Datos personales</h2>
+              <p className="mt-1 text-xs text-[#4a7c5f] sm:text-sm">Administra tu identidad dentro de EcoURP.</p>
             </div>
 
             <div className="mt-6 space-y-5">
@@ -706,13 +700,13 @@ export default function PerfilPage() {
             </div>
           </article>
 
-          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-6 shadow-sm">
+          <article className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-4 shadow-sm sm:p-6">
             <div>
-              <h2 className="text-xl font-bold text-[#0d2b1a]">Logros</h2>
-              <p className="mt-1 text-sm text-[#4a7c5f]">Completa desafios para desbloquear insignias.</p>
+              <h2 className="text-lg font-bold text-[#0d2b1a] sm:text-xl">Logros</h2>
+              <p className="mt-1 text-xs text-[#4a7c5f] sm:text-sm">Completa desafios para desbloquear insignias.</p>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3 lg:grid-cols-3">
               {ACHIEVEMENTS.map((achievement) => {
                 const unlocked = unlockedSet.has(achievement.id);
                 const requirement = ACHIEVEMENT_REQUIREMENTS[achievement.id] ?? achievement.requirement;
@@ -743,8 +737,8 @@ export default function PerfilPage() {
                       )}
                     </div>
 
-                    <p className="mt-3 text-sm font-semibold text-[#0d2b1a]">{achievement.title}</p>
-                    <p className="mt-1 text-xs text-[#6c8f7a]">{achievement.description}</p>
+                    <p className="mt-2 text-xs font-semibold text-[#0d2b1a] sm:mt-3 sm:text-sm">{achievement.title}</p>
+                    <p className="mt-0.5 text-[10px] leading-relaxed text-[#6c8f7a] sm:mt-1 sm:text-xs">{achievement.description}</p>
 
                     <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 rounded-xl border border-[#cfe6d7] bg-white p-2 text-xs text-[#1a5c3a] opacity-0 shadow-sm transition group-hover:opacity-100">
                       Requisito exacto: {requirement}
@@ -756,14 +750,14 @@ export default function PerfilPage() {
           </article>
         </section>
 
-        <section className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="rounded-2xl border border-[#d4e9dc] bg-[#ffffff] p-4 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div>
-              <h2 className="text-xl font-bold text-[#0d2b1a]">Actividad reciente</h2>
-              <p className="mt-1 text-sm text-[#4a7c5f]">Tus ultimas partidas registradas en EcoURP.</p>
+              <h2 className="text-lg font-bold text-[#0d2b1a] sm:text-xl">Actividad reciente</h2>
+              <p className="mt-1 text-xs text-[#4a7c5f] sm:text-sm">Tus ultimas partidas registradas.</p>
             </div>
-            <span className="rounded-full border border-[#cfe6d7] bg-[#e8f5ee] px-3 py-1 text-xs font-semibold text-[#2d9e6b]">
-              Mostrando {Math.min(5, recentSessions.length)} recientes
+            <span className="rounded-full border border-[#cfe6d7] bg-[#e8f5ee] px-2.5 py-0.5 text-[10px] font-semibold text-[#2d9e6b] sm:px-3 sm:py-1 sm:text-xs">
+              {Math.min(5, recentSessions.length)} recientes
             </span>
           </div>
 
@@ -778,38 +772,38 @@ export default function PerfilPage() {
                 return (
                   <article
                     key={`${sessionRow.created_at ?? "sin-fecha"}-${index}`}
-                    className="flex flex-wrap items-center gap-4 rounded-2xl border border-[#d9ece1] bg-[#fbfefd] px-4 py-3 shadow-sm"
+                    className="flex flex-wrap items-center gap-2 rounded-xl border border-[#d9ece1] bg-[#fbfefd] px-3 py-2.5 shadow-sm sm:gap-4 sm:rounded-2xl sm:px-4 sm:py-3"
                   >
-                    <div className="flex min-w-[68px] flex-col items-center rounded-xl border border-[#cfe6d7] bg-[#e8f5ee] px-2 py-1 text-center text-[#1a5c3a]">
-                      <span className="text-lg font-bold leading-none">{dateBadge.day}</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide">{dateBadge.month}</span>
+                    <div className="flex min-w-[52px] flex-col items-center rounded-lg border border-[#cfe6d7] bg-[#e8f5ee] px-1.5 py-1 text-center text-[#1a5c3a] sm:min-w-[68px] sm:rounded-xl sm:px-2">
+                      <span className="text-sm font-bold leading-none sm:text-lg">{dateBadge.day}</span>
+                      <span className="text-[9px] font-semibold uppercase tracking-wide sm:text-[10px]">{dateBadge.month}</span>
                     </div>
 
                     <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold sm:px-3 sm:py-1 sm:text-xs ${
                         MODE_BADGE_STYLES[mode]
                       }`}
                     >
                       {MODE_LABELS[mode]}
                     </span>
 
-                    <div className="min-w-[110px]">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-[#2d9e6b]">Puntaje</p>
-                      <p className="text-2xl font-bold text-[#0d2b1a]">{sessionScore}</p>
+                    <div className="min-w-[60px] sm:min-w-[110px]">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-[#2d9e6b] sm:text-xs">Puntaje</p>
+                      <p className="text-lg font-bold text-[#0d2b1a] sm:text-2xl">{sessionScore}</p>
                     </div>
 
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-[#cfe6d7] bg-white px-3 py-1.5 text-xs font-semibold text-[#4a7c5f]">
-                      <ClockIcon className="h-4 w-4 text-[#2d9e6b]" />
+                    <div className="hidden items-center gap-1.5 rounded-full border border-[#cfe6d7] bg-white px-2.5 py-1 text-[10px] font-semibold text-[#4a7c5f] sm:inline-flex sm:px-3 sm:py-1.5 sm:text-xs">
+                      <ClockIcon className="h-3.5 w-3.5 text-[#2d9e6b] sm:h-4 sm:w-4" />
                       {formatDuration(sessionRow.duration_ms)}
                     </div>
 
                     {isBest ? (
-                      <div className="ml-auto inline-flex items-center gap-1 rounded-full border border-[#f1d276] bg-[#fff8dc] px-3 py-1 text-xs font-semibold text-[#8a6a14]">
-                        <StarIcon className="h-4 w-4" />
-                        Mejor partida
+                      <div className="ml-auto inline-flex items-center gap-1 rounded-full border border-[#f1d276] bg-[#fff8dc] px-2 py-0.5 text-[10px] font-semibold text-[#8a6a14] sm:px-3 sm:py-1 sm:text-xs">
+                        <StarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        Mejor
                       </div>
                     ) : (
-                      <div className="ml-auto text-xs text-[#8ba693]">Sin record</div>
+                      <div className="ml-auto hidden text-xs text-[#8ba693] sm:block">Sin record</div>
                     )}
                   </article>
                 );

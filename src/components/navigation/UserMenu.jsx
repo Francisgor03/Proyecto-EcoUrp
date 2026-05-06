@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getAvatarById } from "../../../config/avatars";
+import { getAvatarById } from "@/config/avatars";
 
 export default function UserMenu() {
   const router = useRouter();

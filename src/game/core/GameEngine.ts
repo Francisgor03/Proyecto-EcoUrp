@@ -60,6 +60,8 @@ interface ParallaxLayer {
 }
 
 const COLLECTOR_BOTTOM_OFFSET = 152;
+const MAX_PLAY_WIDTH = 900;
+const PLAY_PADDING = 52;
 
 /**
  * Motor principal del juego Eco-Catch con render Pixi.
@@ -132,14 +134,17 @@ export class GameEngine {
 
     this.setupParallax();
 
+    const playBounds = this.getPlayBounds();
+
     this.collector = new Collector({
-      texture: this.assets.collector,
+      textures: this.assets.collectors,
       startX: this.width / 2,
       y: this.getCollectorY(),
-      minX: 56,
-      maxX: this.width - 56,
+      minX: playBounds.minX,
+      maxX: playBounds.maxX,
       moveSpeed: 360,
       selectedType: initialState.selectedType,
+      baseScale: this.resolveCollectorScale(),
     });
 
     this.errorIcon = new Sprite(this.assets.errorIcon);
@@ -153,8 +158,8 @@ export class GameEngine {
     this.particleEffect = new ParticleEffect(this.effectRoot, this.assets.particle);
 
     this.spawnSystem = new SpawnSystem({
-      width: this.width,
-      paddingX: 52,
+      minX: playBounds.minX,
+      maxX: playBounds.maxX,
       getCurrentSpawnMs: () => this.currentDifficulty.spawnMs,
       onSpawn: (type, x) => this.spawnWaste(type, x),
     });
@@ -224,8 +229,10 @@ export class GameEngine {
     this.width = width;
     this.height = height;
 
-    this.spawnSystem.setWidth(width);
-    this.collector.setBounds(56, this.width - 56);
+    const playBounds = this.getPlayBounds();
+    this.spawnSystem.setBounds(playBounds.minX, playBounds.maxX);
+    this.collector.setBounds(playBounds.minX, playBounds.maxX);
+    this.collector.setBaseScale(this.resolveCollectorScale());
     this.collector.y = this.getCollectorY();
 
     this.parallaxLayers.forEach((layer) => {
@@ -429,6 +436,33 @@ export class GameEngine {
     return Math.max(100, this.height - COLLECTOR_BOTTOM_OFFSET);
   }
 
+  private getPlayBounds(): { minX: number; maxX: number } {
+    const effectiveWidth = Math.min(this.width, MAX_PLAY_WIDTH);
+    const centerX = this.width / 2;
+    const halfPlay = (effectiveWidth / 2) - PLAY_PADDING;
+
+    return {
+      minX: centerX - halfPlay,
+      maxX: centerX + halfPlay,
+    };
+  }
+
+  private resolveCollectorScale(): number {
+    if (this.width < 360) {
+      return 0.66;
+    }
+
+    if (this.width < 420) {
+      return 0.72;
+    }
+
+    if (this.width < 520) {
+      return 0.82;
+    }
+
+    return 1;
+  }
+
   private clearWastes(): void {
     while (this.wastes.length) {
       const waste = this.wastes.pop();
@@ -446,7 +480,7 @@ export class GameEngine {
       type,
       textures: this.assets.wastes[type],
       x,
-      y: -36,
+      y: -80,
       fallSpeed: this.currentDifficulty.fallSpeed,
     });
 

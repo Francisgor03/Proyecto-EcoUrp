@@ -92,6 +92,11 @@ create policy "Lectura propia logros" on public.ecourp_user_achievements
 create policy "Insertar propio logro" on public.ecourp_user_achievements
   for insert with check (auth.uid() = user_id);
 
+-- Ranking: permite ver que logros tiene cada jugador (solo ids de catalogo, no es dato sensible).
+-- Sin esta politica, la consulta del leaderboard solo devuelve las filas del usuario conectado.
+create policy "Lectura publica logros desbloqueados ranking" on public.ecourp_user_achievements
+  for select using (true);
+
 -- Seed de logros basicos (usa on conflict para no duplicar)
 insert into public.ecourp_achievements
   (id, title, description, requirement_text, icon_key, sort_order)

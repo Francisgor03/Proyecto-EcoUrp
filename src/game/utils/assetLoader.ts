@@ -12,6 +12,10 @@ import sprPapelDiarioImage from "@/assets/sprites/spr_papel_diario.png";
 import sprPlasticoBotellaImage from "@/assets/sprites/spr_plastico_botella.png";
 import sprPlasticoDetergenteImage from "@/assets/sprites/spr_plastico_detergente.png";
 import sprPlasticoVasoImage from "@/assets/sprites/spr_plastico_vaso.png";
+import sprTachoOrganicoImage from "@/assets/sprites/spr_tacho_organico.png";
+import sprTachoPapelImage from "@/assets/sprites/spr_tacho_papel.png";
+import sprTachoPlasticoImage from "@/assets/sprites/spr_tacho_plastico.png";
+import sprTachoVidrioImage from "@/assets/sprites/spr_tacho_vidrio.png";
 import sprVidrioBotellaImage from "@/assets/sprites/spr_vidrio_botella.png";
 import sprVidrioFrascoImage from "@/assets/sprites/spr_vidrio_frasco.png";
 import sprVidrioTarroImage from "@/assets/sprites/spr_vidrio_tarro.png";
@@ -21,7 +25,6 @@ const ASSET_KEYS = {
   backgroundFar: "game-bg-far",
   backgroundMid: "game-bg-mid",
   backgroundNear: "game-bg-near",
-  collector: "game-collector",
   errorIcon: "game-error-icon",
   particle: "game-particle-dot",
 } as const;
@@ -34,7 +37,7 @@ export interface LoadedGameAssets {
     mid: Texture;
     near: Texture;
   };
-  collector: Texture;
+  collectors: Record<WasteTypeId, Texture>;
   errorIcon: Texture;
   particle: Texture;
   wastes: Record<WasteTypeId, Texture[]>;
@@ -45,6 +48,13 @@ const WASTE_SPRITE_SOURCES: Record<WasteTypeId, StaticImageData[]> = {
   paper: [sprPapelBolsaImage, sprPapelCajaImage, sprPapelDiarioImage],
   glass: [sprVidrioBotellaImage, sprVidrioFrascoImage, sprVidrioTarroImage],
   organic: [sprOrganicoBananaImage, sprOrganicoHuevoImage, sprOrganicoManzanaImage],
+};
+
+const COLLECTOR_SPRITE_SOURCES: Record<WasteTypeId, StaticImageData> = {
+  plastic: sprTachoPlasticoImage,
+  paper: sprTachoPapelImage,
+  glass: sprTachoVidrioImage,
+  organic: sprTachoOrganicoImage,
 };
 
 let assetCachePromise: Promise<LoadedGameAssets> | null = null;
@@ -147,6 +157,15 @@ async function loadWasteVariantTexture(
   }
 }
 
+async function loadCollectorTexture(wasteId: WasteTypeId, source: StaticImageData): Promise<Texture> {
+  try {
+    return (await Assets.load(resolveImageSource(source))) as Texture;
+  } catch (error) {
+    console.warn(`[EcoURP] No se pudo cargar tacho ${wasteId}. Usando fallback SVG.`, error);
+    return Texture.from(createCollectorSvg());
+  }
+}
+
 export async function preloadGameAssets(): Promise<LoadedGameAssets> {
   if (assetCachePromise) {
     return assetCachePromise;
@@ -156,7 +175,6 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
     registerAsset(ASSET_KEYS.backgroundFar, resolveImageSource(datosImage));
     registerAsset(ASSET_KEYS.backgroundMid, resolveImageSource(heroImage));
     registerAsset(ASSET_KEYS.backgroundNear, resolveImageSource(fondoPruebaImage));
-    registerAsset(ASSET_KEYS.collector, createCollectorSvg());
     registerAsset(ASSET_KEYS.errorIcon, createErrorIconSvg());
     registerAsset(ASSET_KEYS.particle, createParticleSvg());
 
@@ -164,7 +182,6 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
       ASSET_KEYS.backgroundFar,
       ASSET_KEYS.backgroundMid,
       ASSET_KEYS.backgroundNear,
-      ASSET_KEYS.collector,
       ASSET_KEYS.errorIcon,
       ASSET_KEYS.particle,
     ]);
@@ -185,13 +202,18 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
       wasteTextures[wasteId] = variants;
     }
 
+    const collectorTextures = {} as Record<WasteTypeId, Texture>;
+    for (const wasteId of WASTE_IDS) {
+      collectorTextures[wasteId] = await loadCollectorTexture(wasteId, COLLECTOR_SPRITE_SOURCES[wasteId]);
+    }
+
     return {
       backgrounds: {
         far: getTexture(ASSET_KEYS.backgroundFar),
         mid: getTexture(ASSET_KEYS.backgroundMid),
         near: getTexture(ASSET_KEYS.backgroundNear),
       },
-      collector: getTexture(ASSET_KEYS.collector),
+      collectors: collectorTextures,
       errorIcon: getTexture(ASSET_KEYS.errorIcon),
       particle: getTexture(ASSET_KEYS.particle),
       wastes: wasteTextures,

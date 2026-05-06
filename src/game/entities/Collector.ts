@@ -1,14 +1,15 @@
-import { Container, Graphics, Sprite, Text, type Texture } from "pixi.js";
-import { getWasteType, type WasteTypeId } from "@/game/config/wasteTypes";
+import { Container, Sprite, type Texture } from "pixi.js";
+import type { WasteTypeId } from "@/game/config/wasteTypes";
 
 export interface CollectorOptions {
-  texture: Texture;
+  textures: Record<WasteTypeId, Texture>;
   startX: number;
   y: number;
   minX: number;
   maxX: number;
   moveSpeed: number;
   selectedType: WasteTypeId;
+  baseScale?: number;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -21,8 +22,8 @@ function clamp(value: number, min: number, max: number): number {
  */
 export class Collector extends Container {
   private readonly sprite: Sprite;
-  private readonly selectionRing: Graphics;
-  private readonly typeLabel: Text;
+  private readonly textures: Record<WasteTypeId, Texture>;
+  private baseScale: number;
 
   private moveDirection = 0;
   private minX: number;
@@ -37,30 +38,17 @@ export class Collector extends Container {
     this.maxX = options.maxX;
     this.moveSpeed = options.moveSpeed;
     this.selectedType = options.selectedType;
+    this.textures = options.textures;
+    this.baseScale = options.baseScale ?? 1;
 
-    this.sprite = new Sprite(options.texture);
+    this.sprite = new Sprite(this.textures[options.selectedType]);
     this.sprite.anchor.set(0.5);
-    this.sprite.scale.set(0.54);
-
-    this.selectionRing = new Graphics();
-    this.selectionRing.y = 50;
-
-    this.typeLabel = new Text({
-      text: "",
-      style: {
-        fontFamily: "Trebuchet MS, Verdana, sans-serif",
-        fontSize: 16,
-        fontWeight: "700",
-        fill: "#ecfdf5",
-      },
-    });
-    this.typeLabel.anchor.set(0.5);
-    this.typeLabel.y = 79;
+    this.sprite.scale.set(this.baseScale);
 
     this.x = options.startX;
     this.y = options.y;
 
-    this.addChild(this.sprite, this.selectionRing, this.typeLabel);
+    this.addChild(this.sprite);
     this.applySelectedType(options.selectedType);
   }
 
@@ -74,19 +62,16 @@ export class Collector extends Container {
     this.moveDirection = clamp(direction, -1, 1);
   }
 
+  public setBaseScale(scale: number): void {
+    this.baseScale = Math.max(0.1, scale);
+    this.sprite.scale.set(this.baseScale);
+  }
+
   public applySelectedType(type: WasteTypeId): void {
     this.selectedType = type;
 
-    const selectedWaste = getWasteType(type);
-    this.sprite.tint = selectedWaste.colorNumber;
-
-    this.selectionRing.clear();
-    this.selectionRing.circle(0, 0, 22);
-    this.selectionRing.stroke({ width: 4, color: selectedWaste.colorNumber, alpha: 0.95 });
-    this.selectionRing.fill({ color: selectedWaste.colorNumber, alpha: 0.2 });
-
-    this.typeLabel.text = selectedWaste.label;
-    this.typeLabel.style.fill = selectedWaste.colorHex;
+    this.sprite.texture = this.textures[type];
+    this.sprite.tint = 0xffffff;
   }
 
   public update(deltaMs: number): void {
@@ -96,8 +81,8 @@ export class Collector extends Container {
     const velocityX = this.x - previousX;
     const moving = Math.abs(velocityX) > 0.001;
 
-    const targetScaleX = moving ? 1.14 : 1;
-    const targetScaleY = moving ? 0.88 : 1;
+    const targetScaleX = this.baseScale * (moving ? 1.14 : 1);
+    const targetScaleY = this.baseScale * (moving ? 0.88 : 1);
 
     this.sprite.scale.x += (targetScaleX - this.sprite.scale.x) * 0.22;
     this.sprite.scale.y += (targetScaleY - this.sprite.scale.y) * 0.22;
@@ -105,8 +90,6 @@ export class Collector extends Container {
     const targetRotation = this.moveDirection * 0.06;
     this.sprite.rotation += (targetRotation - this.sprite.rotation) * 0.18;
 
-    const ringPulse = 1 + Math.sin(performance.now() * 0.008) * 0.05;
-    this.selectionRing.scale.set(ringPulse);
   }
 
   public getSelectedType(): WasteTypeId {

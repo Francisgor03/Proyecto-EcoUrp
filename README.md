@@ -66,7 +66,7 @@ Abre http://localhost:3000
 
 - Crear cuenta: pestaña "Crear cuenta" en /login.
 - Recuperar cuenta: pestaña "Recuperar" en /login.
-- Jugar: /juego (requiere sesion activa).
+- Jugar: /game (requiere sesion activa).
 - Guardado de puntaje: automatico al terminar la partida (tabla ecourp_tacho_scores).
 
 ## Notas

@@ -49,6 +49,7 @@ export interface UseGameStateActions {
   returnToMenu: () => void;
   setSelectedType: (type: WasteTypeId) => void;
   clearWrongFeedback: () => void;
+  endGame: () => void;
 }
 
 export interface UseGameStateResult {
@@ -312,6 +313,10 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
     }));
   }, [applyState]);
 
+  const endGame = useCallback(() => {
+    applyState((previous) => completeRound(previous, "manual"));
+  }, [applyState]);
+
   const bridge = useMemo<GameStateBridge>(
     () => ({
       getState: () => stateRef.current,
@@ -496,8 +501,9 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
       returnToMenu,
       setSelectedType,
       clearWrongFeedback,
+      endGame,
     }),
-    [clearWrongFeedback, returnToMenu, selectMode, setSelectedType, startGame],
+    [clearWrongFeedback, endGame, returnToMenu, selectMode, setSelectedType, startGame],
   );
 
   return {

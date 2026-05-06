@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AVATARS, getAvatarById, type UserStats } from "../../config/avatars";
-import { useAvatarSelector } from "../../hooks/useAvatarSelector";
+import { AVATARS, getAvatarById, type UserStats } from "@/config/avatars";
+import { useAvatarSelector } from "@/hooks/useAvatarSelector";
 
 type AvatarSelectorProps = {
   currentAvatarId: string;
@@ -119,14 +119,14 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
       <div
         className={`overflow-hidden transition-[max-height,opacity] ${isOpen ? "pointer-events-auto mt-3" : "pointer-events-none mt-0"}`}
         style={{
-          maxHeight: isOpen ? "480px" : "0px",
+          maxHeight: isOpen ? "70vh" : "0px",
           opacity: isOpen ? 1 : 0,
           transitionDuration: "300ms, 200ms",
           transitionTimingFunction: "ease, ease",
         }}
       >
-        <div className="rounded-2xl border border-white/30 bg-white/95 p-4 text-[#1a5c3a] shadow-sm backdrop-blur-sm">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="max-h-[60vh] overflow-y-auto rounded-2xl border border-white/30 bg-white/95 p-3 text-[#1a5c3a] shadow-sm backdrop-blur-sm sm:p-4">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
             {AVATARS.map((avatar) => {
               const unlocked = isUnlocked(avatar, userStats);
               const isSelected = selectedId === avatar.id;
@@ -142,7 +142,7 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
                   tabIndex={unlocked ? 0 : -1}
                   aria-disabled={!unlocked}
                   data-unlock={avatar.unlockCondition}
-                  className={`relative flex min-h-[132px] flex-col items-center rounded-2xl border px-3 py-3 text-center transition ${
+                  className={`relative flex min-h-[100px] flex-col items-center rounded-xl border px-2 py-2.5 text-center transition sm:min-h-[132px] sm:rounded-2xl sm:px-3 sm:py-3 ${
                     isSelected
                       ? "border-[#2d9e6b] bg-[#e8f5ee]"
                       : "border-[#d4e9dc] bg-white"
@@ -152,16 +152,16 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
                       : "avatar-locked-tooltip cursor-not-allowed opacity-60"
                   }`}
                 >
-                  <span className={`leading-none ${unlocked ? "text-[32px]" : "text-[32px] grayscale"}`}>
+                  <span className={`leading-none ${unlocked ? "text-[26px] sm:text-[32px]" : "text-[26px] sm:text-[32px] grayscale"}`}>
                     {avatar.emoji}
                   </span>
-                  <span className="mt-2 text-sm font-semibold text-[#0d2b1a]">{avatar.name}</span>
+                  <span className="mt-1.5 text-xs font-semibold text-[#0d2b1a] sm:mt-2 sm:text-sm">{avatar.name}</span>
 
                   {unlocked ? (
-                    <span className="mt-1 text-xs font-semibold text-[#2d9e6b]">Libre</span>
+                    <span className="mt-0.5 text-[10px] font-semibold text-[#2d9e6b] sm:mt-1 sm:text-xs">Libre</span>
                   ) : (
-                    <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#4a7c5f]">
-                      <LockIcon className="h-3.5 w-3.5" />
+                    <span className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#4a7c5f] sm:mt-1 sm:gap-1 sm:text-xs">
+                      <LockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       <span className="line-clamp-2">{avatar.unlockCondition}</span>
                     </span>
                   )}
@@ -180,7 +180,7 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
               type="button"
               onClick={handleSaveAvatar}
               disabled={!isDirty || isSaving}
-              className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-2xl bg-[#2d9e6b] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#247f57] disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex min-w-[120px] items-center justify-center gap-1.5 rounded-xl bg-[#2d9e6b] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#247f57] disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[150px] sm:gap-2 sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-sm"
             >
               {saveStatus === "saving" ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : null}
               {saveStatus === "success" ? <CheckIcon className="h-4 w-4" /> : null}

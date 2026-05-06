@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import HomeHeader from "@/components/navigation/HomeHeader";
+import ThemeScript from "@/components/theme/ThemeScript";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import LoginToast from "@/components/ui/LoginToast";
 import AchievementToast from "@/components/ui/AchievementToast";
 
@@ -15,13 +18,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body className="min-h-screen font-sans">
-        <AuthProvider>
-          <LoginToast />
-          <AchievementToast />
-          {children}
-        </AuthProvider>
+        <ThemeScript />
+        <ThemeProvider>
+          <AuthProvider>
+            <LoginToast />
+            <AchievementToast />
+            <HomeHeader />
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -29,6 +29,36 @@
 
 }
 
+html[data-theme="dark"] {
+  /* Mantiene la paleta verdosa pero invierte el rango para UI oscura:
+     - 50/100: superficies oscuras
+     - 900/950: texto claro y acentos suaves
+  */
+  --color-eco-emerald-50: #061a14;
+  --color-eco-emerald-100: #07231b;
+  --color-eco-emerald-200: #0a3126;
+  --color-eco-emerald-300: #0f4333;
+  --color-eco-emerald-400: #14624a;
+  --color-eco-emerald-500: #10b981;
+  --color-eco-emerald-600: #24c78b;
+  --color-eco-emerald-700: #5be3b2;
+  --color-eco-emerald-800: #a7f3d0;
+  --color-eco-emerald-900: #d1fae5;
+  --color-eco-emerald-950: #ecfdf5;
+
+  --color-eco-lime-50: #0b1602;
+  --color-eco-lime-100: #122205;
+  --color-eco-lime-200: #1a3307;
+  --color-eco-lime-300: #26470c;
+  --color-eco-lime-400: #3f6212;
+  --color-eco-lime-500: #65a30d;
+  --color-eco-lime-600: #84cc16;
+  --color-eco-lime-700: #a3e635;
+  --color-eco-lime-800: #d9f99d;
+  --color-eco-lime-900: #ecfccb;
+  --color-eco-lime-950: #f7fee7;
+}
+
 body {
   @apply bg-eco-emerald-50 text-eco-emerald-950 antialiased;
 }

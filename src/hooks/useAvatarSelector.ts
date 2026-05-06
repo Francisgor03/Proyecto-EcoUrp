@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { AVATARS, getAvatarById, type Avatar, type UserStats } from "../config/avatars";
+import { AVATARS, getAvatarById, type Avatar, type UserStats } from "@/config/avatars";
 
 type UseAvatarSelectorParams = {
   currentAvatarId: string;

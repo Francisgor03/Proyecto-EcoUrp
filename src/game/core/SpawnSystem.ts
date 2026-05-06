@@ -1,8 +1,8 @@
 import { WASTE_IDS, type WasteTypeId } from "@/game/config/wasteTypes";
 
 export interface SpawnSystemConfig {
-  width: number;
-  paddingX: number;
+  minX: number;
+  maxX: number;
   getCurrentSpawnMs: () => number;
   onSpawn: (type: WasteTypeId, x: number) => void;
 }
@@ -15,8 +15,8 @@ function randomInt(min: number, max: number): number {
  * Controla el ritmo de aparicion de residuos durante la partida.
  */
 export class SpawnSystem {
-  private width: number;
-  private readonly paddingX: number;
+  private spawnMinX: number;
+  private spawnMaxX: number;
   private readonly getCurrentSpawnMs: () => number;
   private readonly onSpawn: (type: WasteTypeId, x: number) => void;
 
@@ -24,8 +24,8 @@ export class SpawnSystem {
   private paused = false;
 
   public constructor(config: SpawnSystemConfig) {
-    this.width = config.width;
-    this.paddingX = config.paddingX;
+    this.spawnMinX = config.minX;
+    this.spawnMaxX = config.maxX;
     this.getCurrentSpawnMs = config.getCurrentSpawnMs;
     this.onSpawn = config.onSpawn;
   }
@@ -63,15 +63,14 @@ export class SpawnSystem {
     this.paused = value;
   }
 
-  public setWidth(width: number): void {
-    this.width = width;
+  public setBounds(minX: number, maxX: number): void {
+    this.spawnMinX = minX;
+    this.spawnMaxX = maxX;
   }
 
   private spawnOnce(): void {
     const type = WASTE_IDS[randomInt(0, WASTE_IDS.length - 1)];
-    const minX = this.paddingX;
-    const maxX = this.width - this.paddingX;
-    const x = randomInt(minX, maxX);
+    const x = randomInt(this.spawnMinX, this.spawnMaxX);
 
     this.onSpawn(type, x);
   }

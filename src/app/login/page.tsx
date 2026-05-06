@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -719,13 +718,6 @@ export default function LoginPage() {
               </div>
               <span className="text-base font-semibold tracking-wide text-[#1a5c3a]">EcoURP</span>
             </div>
-
-            <Link
-              href="/"
-              className="mb-5 inline-flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-medium text-[#2b6f4d] transition hover:bg-white"
-            >
-              &larr; Volver al inicio
-            </Link>
 
             <div className="rounded-[30px] border border-[#d7ecdf] bg-white p-6 shadow-[0_20px_45px_rgba(13,43,26,0.08)] sm:p-9">
               <div className="mb-7 text-center">

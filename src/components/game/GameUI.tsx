@@ -9,6 +9,7 @@ interface GameUIProps {
   state: GameState;
   onSelectType: (type: WasteTypeId) => void;
   onDismissFeedback: () => void;
+  layout?: "overlay" | "stacked";
 }
 
 interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -78,11 +79,22 @@ function formatPauseCountdown(pauseMs: number): string {
   return `${seconds}s`;
 }
 
-export default function GameUI({ state, onSelectType, onDismissFeedback }: GameUIProps) {
+export default function GameUI({ state, onSelectType, onDismissFeedback, layout = "overlay" }: GameUIProps) {
   const scoreRef = useRef<HTMLDivElement | null>(null);
   const livesRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<HTMLDivElement | null>(null);
   const feedbackRef = useRef<HTMLDivElement | null>(null);
+
+  const isOverlay = layout === "overlay";
+  const containerClassName = isOverlay
+    ? "pointer-events-none absolute inset-0 z-20 p-2 pb-6 sm:p-4 sm:pb-8"
+    : "pointer-events-none relative z-20 mt-3 px-2 pb-3";
+  const feedbackWrapperClassName = isOverlay
+    ? "pointer-events-auto absolute bottom-24 left-1/2 w-full max-w-2xl -translate-x-1/2 px-2 sm:bottom-32 sm:px-0"
+    : "pointer-events-auto mt-3 w-full";
+  const feedbackCardClassName = isOverlay
+    ? "rounded-2xl border border-rose-200 bg-white/95 p-3 shadow-2xl shadow-rose-900/10 backdrop-blur sm:p-5"
+    : "rounded-2xl border border-rose-200 bg-white/95 p-3 shadow-xl shadow-rose-900/10 backdrop-blur";
 
   useEffect(() => {
     if (scoreRef.current) {
@@ -116,41 +128,41 @@ export default function GameUI({ state, onSelectType, onDismissFeedback }: GameU
   }, [state.wrongFeedback]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 p-3 pb-24 sm:p-4">
+    <div className={containerClassName}>
       <div className="flex h-full flex-col justify-between">
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           <div
             ref={scoreRef}
-            className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-4 py-3 text-eco-emerald-900 shadow-md backdrop-blur-sm"
+            className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-2.5 py-2 text-eco-emerald-900 shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
           >
-            <p className="text-xs font-bold uppercase tracking-wide text-eco-emerald-600">Puntos</p>
-            <p className="mt-1 text-2xl font-black">{state.score}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-eco-emerald-600 sm:text-xs">Puntos</p>
+            <p className="mt-1 text-lg font-black sm:text-2xl">{state.score}</p>
           </div>
 
           <div
             ref={livesRef}
-            className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-4 py-3 text-eco-emerald-900 shadow-md backdrop-blur-sm"
+            className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-2.5 py-2 text-eco-emerald-900 shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
           >
-            <p className="text-xs font-bold uppercase tracking-wide text-eco-emerald-600">Vidas</p>
-            <p className="mt-1 text-2xl font-black">{state.lives === null ? "INF" : state.lives}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-eco-emerald-600 sm:text-xs">Vidas</p>
+            <p className="mt-1 text-lg font-black sm:text-2xl">{state.lives === null ? "INF" : state.lives}</p>
           </div>
 
-          <div className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-4 py-3 text-eco-emerald-900 shadow-md backdrop-blur-sm">
-            <p className="text-xs font-bold uppercase tracking-wide text-eco-emerald-600">Racha</p>
-            <p className="mt-1 text-2xl font-black">{state.streak}</p>
+          <div className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-2.5 py-2 text-eco-emerald-900 shadow-md backdrop-blur-sm sm:px-4 sm:py-3">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-eco-emerald-600 sm:text-xs">Racha</p>
+            <p className="mt-1 text-lg font-black sm:text-2xl">{state.streak}</p>
           </div>
 
           <div
             ref={timerRef}
-            className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-4 py-3 text-eco-emerald-900 shadow-md backdrop-blur-sm"
+            className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-2.5 py-2 text-eco-emerald-900 shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
           >
-            <p className="text-xs font-bold uppercase tracking-wide text-eco-emerald-600">Tiempo</p>
-            <p className="mt-1 text-2xl font-black">{formatTimer(state.timerMs)}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-eco-emerald-600 sm:text-xs">Tiempo</p>
+            <p className="mt-1 text-lg font-black sm:text-2xl">{formatTimer(state.timerMs)}</p>
           </div>
         </div>
 
-        <div className="pointer-events-auto grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {WASTE_TYPES.map((waste, index) => {
+        <div className="pointer-events-auto grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+          {WASTE_TYPES.map((waste) => {
             const selected = state.selectedType === waste.id;
 
             return (
@@ -158,17 +170,17 @@ export default function GameUI({ state, onSelectType, onDismissFeedback }: GameU
                 key={waste.id}
                 type="button"
                 onClick={() => onSelectType(waste.id)}
-                className={`rounded-2xl border px-3 py-3 text-left shadow-lg backdrop-blur-sm ${
+                className={`rounded-2xl px-3 py-3 text-center shadow-lg transition-all sm:px-4 sm:py-4 ${
                   selected
-                    ? "border-eco-emerald-900 bg-eco-emerald-100 text-eco-emerald-950"
-                    : "border-white/85 bg-white/80 text-eco-emerald-900"
+                    ? "ring-3 ring-white/80 ring-offset-2 ring-offset-transparent scale-105 shadow-xl"
+                    : "opacity-80 hover:opacity-100 hover:shadow-xl"
                 }`}
+                style={{ backgroundColor: waste.colorHex }}
                 aria-pressed={selected}
               >
-                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: waste.colorHex }}>
-                  [{index + 1}] {waste.shortLabel}
+                <p className="text-sm font-extrabold text-white drop-shadow-sm sm:text-base">
+                  {waste.label}
                 </p>
-                <p className="mt-1 text-sm font-semibold">{waste.label}</p>
               </AnimatedButton>
             );
           })}
@@ -176,15 +188,12 @@ export default function GameUI({ state, onSelectType, onDismissFeedback }: GameU
       </div>
 
       {state.wrongFeedback ? (
-        <div
-          ref={feedbackRef}
-          className="pointer-events-auto absolute bottom-28 left-1/2 w-full max-w-2xl -translate-x-1/2 px-3 sm:px-0"
-        >
-          <div className="rounded-2xl border border-rose-200 bg-white/95 p-4 shadow-2xl shadow-rose-900/10 backdrop-blur sm:p-5">
+        <div ref={feedbackRef} className={feedbackWrapperClassName}>
+          <div className={feedbackCardClassName}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-rose-700">{state.wrongFeedback.title}</p>
-                <p className="mt-1 text-sm text-rose-900">
+                <p className="text-xs font-bold text-rose-700 sm:text-sm">{state.wrongFeedback.title}</p>
+                <p className="mt-1 text-xs text-rose-900 sm:text-sm">
                   Residuo: <span className="font-semibold">{state.wrongFeedback.residuo}</span> | Elegiste: {" "}
                   <span className="font-semibold">{state.wrongFeedback.tachoElegido}</span>
                 </p>
@@ -204,7 +213,7 @@ export default function GameUI({ state, onSelectType, onDismissFeedback }: GameU
               </p>
             ) : null}
 
-            <p className="mt-3 text-sm leading-relaxed text-rose-800">{state.wrongFeedback.body}</p>
+            <p className="mt-3 text-xs leading-relaxed text-rose-800 sm:text-sm">{state.wrongFeedback.body}</p>
           </div>
         </div>
       ) : null}
