@@ -658,81 +658,81 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0faf4] text-[#0d2b1a]">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen flex-col md:flex-row">
-        <aside className="relative hidden overflow-hidden bg-[#1a5c3a] md:flex md:w-2/5 lg:w-1/2">
+        <aside className="relative hidden overflow-hidden bg-surface-raised md:flex md:w-2/5 lg:w-1/2">
           <div
-            className="decor-circle absolute -left-8 top-16 h-24 w-24 rounded-full bg-white/20"
+            className="decor-circle absolute -left-8 top-16 h-24 w-24 rounded-full bg-primary/15"
             style={{ animationDelay: "0s", animationDuration: "8.6s" }}
           />
           <div
-            className="decor-circle absolute right-10 top-10 h-14 w-14 rounded-full bg-white/15"
+            className="decor-circle absolute right-10 top-10 h-14 w-14 rounded-full bg-primary/10"
             style={{ animationDelay: "0.9s", animationDuration: "7.7s" }}
           />
           <div
-            className="decor-circle absolute bottom-16 left-14 h-20 w-20 rounded-full bg-white/20"
+            className="decor-circle absolute bottom-16 left-14 h-20 w-20 rounded-full bg-primary/15"
             style={{ animationDelay: "1.6s", animationDuration: "8.9s" }}
           />
           <div
-            className="decor-circle absolute right-6 top-1/3 h-28 w-28 rounded-full bg-white/15"
+            className="decor-circle absolute right-6 top-1/3 h-28 w-28 rounded-full bg-primary/10"
             style={{ animationDelay: "0.5s", animationDuration: "9.4s" }}
           />
           <div
-            className="decor-circle absolute bottom-28 right-20 h-16 w-16 rounded-full bg-white/20"
+            className="decor-circle absolute bottom-28 right-20 h-16 w-16 rounded-full bg-primary/15"
             style={{ animationDelay: "2.1s", animationDuration: "7.4s" }}
           />
           <div
-            className="decor-circle absolute left-1/3 top-1/2 h-10 w-10 rounded-full bg-white/15"
+            className="decor-circle absolute left-1/3 top-1/2 h-10 w-10 rounded-full bg-primary/10"
             style={{ animationDelay: "1.2s", animationDuration: "8.1s" }}
           />
 
           <div className="relative z-10 flex w-full flex-col px-8 py-8 lg:px-10">
-            <div className="flex items-center gap-3 text-white">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#2d9e6b] text-xl font-black text-white">
+            <div className="flex items-center gap-3 text-foreground">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-xl font-black text-primary-foreground">
                 E
               </div>
-              <span className="text-lg font-semibold tracking-wide">EcoURP</span>
+              <span className="text-lg font-semibold tracking-wide text-foreground">EcoURP</span>
             </div>
 
             <div className="mt-8 flex flex-1 items-center justify-center md:mt-4">
               <div className="relative w-full max-w-[360px] md:max-w-[330px] lg:max-w-[520px]">
                 <OrganicBlob className="blob-float h-full w-full" />
-                <div className="absolute inset-[14%] overflow-hidden rounded-[26%] ring-1 ring-white/25 shadow-[0_18px_28px_rgba(6,46,28,0.18)]">
+                <div className="absolute inset-[14%] overflow-hidden rounded-[26%] ring-1 ring-border/40 shadow-[0_18px_28px_rgba(6,46,28,0.18)]">
                   <RecyclingIllustration className="illustration-float h-full w-full" />
                   <div className="illustration-gloss" aria-hidden="true" />
                 </div>
               </div>
             </div>
 
-            <p className="mt-6 max-w-xs text-sm font-medium leading-relaxed text-white/95">
+            <p className="mt-6 max-w-xs text-sm font-medium leading-relaxed text-muted-foreground">
               Aprende a reciclar. Salva el planeta.
             </p>
           </div>
         </aside>
 
-        <main className="flex flex-1 items-center justify-center bg-[#f0faf4] px-5 py-8 sm:px-8 md:w-3/5 md:px-10 lg:w-1/2 lg:px-14">
+        <main className="flex flex-1 items-center justify-center bg-background px-5 py-8 sm:px-8 md:w-3/5 md:px-10 lg:w-1/2 lg:px-14">
           <div className="w-full max-w-[480px]">
             <div className="mb-6 flex items-center gap-3 md:hidden">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#2d9e6b] text-lg font-black text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-lg font-black text-primary-foreground">
                 E
               </div>
-              <span className="text-base font-semibold tracking-wide text-[#1a5c3a]">EcoURP</span>
+              <span className="text-base font-semibold tracking-wide text-foreground">EcoURP</span>
             </div>
 
-            <div className="rounded-[30px] border border-[#d7ecdf] bg-white p-6 shadow-[0_20px_45px_rgba(13,43,26,0.08)] sm:p-9">
+            <div className="rounded-[30px] border border-border bg-card p-6 shadow-[0_20px_45px_rgba(13,43,26,0.08)] sm:p-9">
               <div className="mb-7 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#2d9e6b] text-2xl font-black text-white">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-2xl font-black text-primary-foreground">
                   E
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight text-[#0d2b1a] sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                   Bienvenido de nuevo
                 </h1>
-                <p className="mt-2 text-sm text-[#4a7c5f]">{modeDescription}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{modeDescription}</p>
               </div>
 
               {!supabase ? (
                 <div
-                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900"
+                  className="rounded-2xl border border-amber-300/50 bg-amber-500/10 px-4 py-4 text-sm text-amber-700"
                   role="alert"
                 >
                   <p className="font-semibold">Configuracion pendiente</p>
@@ -743,7 +743,7 @@ export default function LoginPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-                  <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#e8f5ee] p-1.5">
+                  <div className="grid grid-cols-3 gap-2 rounded-2xl bg-surface-raised p-1.5">
                     {(
                       [
                         { value: "login", label: "Ingresar" },
@@ -759,8 +759,8 @@ export default function LoginPage() {
                           onClick={() => switchMode(tab.value)}
                           className={`rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-300 sm:text-sm ${
                             active
-                              ? "bg-white text-[#2d9e6b] shadow-[0_6px_14px_rgba(26,92,58,0.12)]"
-                              : "text-[#4a7c5f] hover:bg-white/70"
+                              ? "bg-card text-primary shadow-[0_6px_14px_rgba(26,92,58,0.12)]"
+                              : "text-muted-foreground hover:bg-card/70"
                           }`}
                         >
                           {tab.label}
@@ -774,13 +774,13 @@ export default function LoginPage() {
                       isReset ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                     }`}
                   >
-                    <p className="overflow-hidden text-sm text-[#4a7c5f]">
+                    <p className="overflow-hidden text-sm text-muted-foreground">
                       Ingresa tu correo para enviarte el enlace de recuperacion.
                     </p>
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="text-sm font-medium text-[#1c5e3d]">
+                    <label htmlFor="email" className="text-sm font-medium text-foreground">
                       Correo electronico
                     </label>
                     <input
@@ -794,7 +794,7 @@ export default function LoginPage() {
                         setTouched((prev) => ({ ...prev, email: true }));
                         refreshValidation(mode, email, password, confirmPassword);
                       }}
-                      className="mt-2 w-full rounded-2xl border border-[#cfe6d7] bg-[#e8f5ee] px-4 py-3 text-sm text-[#0d2b1a] outline-none transition focus:border-[#2d9e6b] focus:ring-2 focus:ring-[#c8ecd8]"
+                      className="mt-2 w-full rounded-2xl border border-border bg-surface-raised px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                       placeholder="tu@correo.com"
                       required
                     />
@@ -808,7 +808,7 @@ export default function LoginPage() {
                     }`}
                   >
                     <div className="overflow-hidden">
-                      <label htmlFor="password" className="text-sm font-medium text-[#1c5e3d]">
+                      <label htmlFor="password" className="text-sm font-medium text-foreground">
                         Contrasena
                       </label>
                       <input
@@ -822,7 +822,7 @@ export default function LoginPage() {
                           setTouched((prev) => ({ ...prev, password: true }));
                           refreshValidation(mode, email, password, confirmPassword);
                         }}
-                        className="mt-2 w-full rounded-2xl border border-[#cfe6d7] bg-[#e8f5ee] px-4 py-3 text-sm text-[#0d2b1a] outline-none transition focus:border-[#2d9e6b] focus:ring-2 focus:ring-[#c8ecd8]"
+                        className="mt-2 w-full rounded-2xl border border-border bg-surface-raised px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                         placeholder="********"
                         required={!isReset}
                       />
@@ -837,7 +837,7 @@ export default function LoginPage() {
                     }`}
                   >
                     <div className="overflow-hidden">
-                      <label htmlFor="confirm" className="text-sm font-medium text-[#1c5e3d]">
+                      <label htmlFor="confirm" className="text-sm font-medium text-foreground">
                         Repite la contrasena
                       </label>
                       <input
@@ -851,7 +851,7 @@ export default function LoginPage() {
                           setTouched((prev) => ({ ...prev, confirmPassword: true }));
                           refreshValidation(mode, email, password, confirmPassword);
                         }}
-                        className="mt-2 w-full rounded-2xl border border-[#cfe6d7] bg-[#e8f5ee] px-4 py-3 text-sm text-[#0d2b1a] outline-none transition focus:border-[#2d9e6b] focus:ring-2 focus:ring-[#c8ecd8]"
+                        className="mt-2 w-full rounded-2xl border border-border bg-surface-raised px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                         placeholder="********"
                         required={isSignup}
                       />
@@ -860,7 +860,7 @@ export default function LoginPage() {
 
                   {message ? (
                     <p
-                      className="rounded-xl border border-[#b7dcc8] bg-[#e8f5ee] px-4 py-3 text-sm text-[#1f6847]"
+                      className="rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-primary"
                       role="status"
                     >
                       {message}
@@ -868,7 +868,7 @@ export default function LoginPage() {
                   ) : null}
 
                   {inlineError ? (
-                    <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                    <p className="rounded-xl border border-rose-300/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-600" role="alert">
                       {inlineError}
                     </p>
                   ) : null}
@@ -876,7 +876,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="mt-1 rounded-2xl bg-[#2d9e6b] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[#247f57] focus:outline-none focus:ring-2 focus:ring-[#c8ecd8] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="mt-1 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {loading
                       ? "Procesando..."
@@ -887,11 +887,11 @@ export default function LoginPage() {
                       : "Iniciar sesion"}
                   </button>
 
-                  <p className="pt-1 text-center text-sm text-[#4a7c5f]">
+                  <p className="pt-1 text-center text-sm text-muted-foreground">
                     Necesitas ayuda para acceder?{" "}
                     <a
                       href="mailto:soporte@ecourp.pe"
-                      className="font-semibold text-[#2d9e6b] underline-offset-2 hover:underline"
+                      className="font-semibold text-primary underline-offset-2 hover:underline"
                     >
                       Contactar soporte
                     </a>
@@ -900,7 +900,7 @@ export default function LoginPage() {
               )}
             </div>
 
-            <p className="mt-6 text-center text-xs leading-relaxed text-[#4a7c5f]">
+            <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
               Al continuar, aceptas el uso de autenticacion segura proporcionada por Supabase.
             </p>
           </div>
@@ -908,12 +908,12 @@ export default function LoginPage() {
       </div>
 
       {profilePromptOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0d2b1a]/30 px-4">
-          <div className="w-full max-w-md rounded-3xl border border-[#d7ecdf] bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-[#0d2b1a]">Elige tu nombre de perfil</h2>
-                <p className="mt-1 text-sm text-[#4a7c5f]">
+                <h2 className="text-lg font-semibold text-foreground">Elige tu nombre de perfil</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Este nombre aparecera en la plataforma.
                 </p>
               </div>
@@ -921,7 +921,7 @@ export default function LoginPage() {
                 type="button"
                 aria-label="Cerrar"
                 onClick={completeSignupFlow}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[#2d9e6b] transition hover:bg-[#e8f5ee]"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-primary transition hover:bg-surface-raised"
               >
                 x
               </button>
@@ -929,7 +929,7 @@ export default function LoginPage() {
 
             <label
               htmlFor="profileName"
-              className="mt-4 block text-xs font-semibold uppercase tracking-wide text-[#4a7c5f]"
+              className="mt-4 block text-xs font-semibold uppercase tracking-wide text-muted-foreground"
             >
               Nombre para mostrar
             </label>
@@ -939,14 +939,14 @@ export default function LoginPage() {
               value={profileName}
               onChange={(event) => setProfileName(event.target.value)}
               placeholder="Ej: Ana, Equipo Verde"
-              className="mt-2 w-full rounded-2xl border border-[#cfe6d7] bg-[#e8f5ee] px-4 py-3 text-sm text-[#0d2b1a] outline-none transition focus:border-[#2d9e6b] focus:ring-2 focus:ring-[#c8ecd8]"
+              className="mt-2 w-full rounded-2xl border border-border bg-surface-raised px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
             />
 
             <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={completeSignupFlow}
-                className="rounded-full border border-[#cfe6d7] px-4 py-2 text-sm font-semibold text-[#2b6f4d] hover:bg-[#e8f5ee]"
+                className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-raised"
               >
                 Omitir
               </button>
@@ -970,7 +970,7 @@ export default function LoginPage() {
 
                   completeSignupFlow();
                 }}
-                className="rounded-full bg-[#2d9e6b] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#247f57] disabled:cursor-not-allowed disabled:opacity-70"
+                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {profileSaving ? "Guardando..." : "Guardar"}
               </button>

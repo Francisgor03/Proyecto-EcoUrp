@@ -3,7 +3,10 @@ export default function ThemeScript() {
   const code = `
 (function () {
   try {
-    var setting = localStorage.getItem('ecourp-theme') || 'system';
+    var setting = localStorage.getItem('ecourp-theme') || 'light';
+    if (setting !== 'light' && setting !== 'dark' && setting !== 'system') {
+      setting = 'light';
+    }
     var theme = setting;
     if (setting === 'system') {
       theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

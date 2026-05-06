@@ -112,43 +112,43 @@ export default function GameOverModal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-eco-emerald-950/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="ecourp-game-over-title"
     >
       <div
         ref={cardRef}
-        className="w-full max-w-xl rounded-3xl border border-eco-emerald-200 bg-white p-5 shadow-2xl shadow-eco-emerald-900/20 sm:p-8"
+        className="w-full max-w-xl rounded-3xl border border-border bg-card p-5 shadow-2xl shadow-black/20 sm:p-8"
       >
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-eco-emerald-600">Partida terminada</p>
-        <h2 id="ecourp-game-over-title" className="mt-2 text-2xl font-black text-eco-emerald-950 sm:text-3xl">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Partida terminada</p>
+        <h2 id="ecourp-game-over-title" className="mt-2 text-2xl font-black text-foreground sm:text-3xl">
           Eco-Catch
         </h2>
-        <p className="mt-1 text-sm text-eco-emerald-700">Resumen de tu rendimiento final.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Resumen de tu rendimiento final.</p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-eco-emerald-100 bg-eco-emerald-50/70 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-600">Score</p>
-            <p className="mt-1 text-xl font-black text-eco-emerald-950 sm:text-2xl">{summary.score}</p>
+          <div className="rounded-2xl border border-border bg-surface-raised/70 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Score</p>
+            <p className="mt-1 text-xl font-black text-foreground sm:text-2xl">{summary.score}</p>
           </div>
-          <div className="rounded-2xl border border-eco-emerald-100 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-600">Precision</p>
-            <p className="mt-1 text-xl font-black text-eco-emerald-950 sm:text-2xl">{summary.accuracy.toFixed(1)}%</p>
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Precision</p>
+            <p className="mt-1 text-xl font-black text-foreground sm:text-2xl">{summary.accuracy.toFixed(1)}%</p>
           </div>
-          <div className="rounded-2xl border border-eco-emerald-100 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-600">Duracion</p>
-            <p className="mt-1 text-lg font-black text-eco-emerald-950 sm:text-xl">
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Duracion</p>
+            <p className="mt-1 text-lg font-black text-foreground sm:text-xl">
               {formatDuration(summary.durationMs)}
             </p>
           </div>
-          <div className="rounded-2xl border border-eco-emerald-100 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-600">Racha maxima</p>
-            <p className="mt-1 text-lg font-black text-eco-emerald-950 sm:text-xl">{summary.bestStreak}</p>
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Racha maxima</p>
+            <p className="mt-1 text-lg font-black text-foreground sm:text-xl">{summary.bestStreak}</p>
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-eco-emerald-100 bg-eco-emerald-50/60 p-4 text-sm text-eco-emerald-800">
+        <div className="mt-4 rounded-2xl border border-border bg-surface-raised/60 p-4 text-sm text-muted-foreground">
           <p>
             Aciertos: <span className="font-semibold">{summary.correct}</span> | Errores: {" "}
             <span className="font-semibold">{summary.wrong + summary.missed}</span>
@@ -156,7 +156,7 @@ export default function GameOverModal({
           <p className="mt-1">Modo: <span className="font-semibold capitalize">{summary.mode}</span></p>
         </div>
 
-        <p className="mt-4 text-xs font-medium text-eco-emerald-700">
+        <p className="mt-4 text-xs font-medium text-muted-foreground">
           {saveStatus === "saving" ? "Guardando resultado..." : saveMessage ?? ""}
         </p>
 
@@ -164,14 +164,14 @@ export default function GameOverModal({
           <AnimatedButton
             type="button"
             onClick={onReplay}
-            className="w-full rounded-2xl bg-eco-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-md"
+            className="w-full rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-md"
           >
             Jugar de nuevo
           </AnimatedButton>
           <AnimatedButton
             type="button"
             onClick={onBackToMenu}
-            className="w-full rounded-2xl border border-eco-emerald-300 bg-white px-5 py-3 text-sm font-semibold text-eco-emerald-800"
+            className="w-full rounded-2xl border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground"
           >
             Volver al menu
           </AnimatedButton>

@@ -76,23 +76,23 @@ export default function AchievementToast() {
     <div className={`fixed right-4 top-16 z-50 w-[min(92vw,380px)] ${visible ? "" : "pointer-events-none"}`}>
       <div
         ref={cardRef}
-        className="flex items-start gap-3 rounded-2xl border border-eco-emerald-200 bg-white/95 px-4 py-3 shadow-lg shadow-eco-emerald-900/10 backdrop-blur"
+        className="flex items-start gap-3 rounded-2xl border border-border bg-card/95 px-4 py-3 shadow-lg shadow-black/10 backdrop-blur"
       >
-        <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-eco-emerald-100 text-xs font-bold text-eco-emerald-800">
+        <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-surface-raised text-xs font-bold text-foreground">
           {current.iconText || "LOGO"}
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-eco-emerald-900">
+          <p className="text-sm font-semibold text-foreground">
             Felicidades, conseguiste el logro
           </p>
-          <p className="mt-1 text-sm font-bold text-eco-emerald-700">"{current.title}"</p>
-          <p className="mt-1 text-xs text-eco-emerald-700">{current.requirement}</p>
+          <p className="mt-1 text-sm font-bold text-primary">"{current.title}"</p>
+          <p className="mt-1 text-xs text-muted-foreground">{current.requirement}</p>
         </div>
         <button
           type="button"
           aria-label="Cerrar aviso"
           onClick={() => setVisible(false)}
-          className="flex h-6 w-6 items-center justify-center rounded-full text-eco-emerald-600 transition hover:bg-eco-emerald-50"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-primary transition hover:bg-surface-raised"
         >
           ×
         </button>

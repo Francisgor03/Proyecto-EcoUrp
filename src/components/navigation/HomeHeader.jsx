@@ -14,30 +14,35 @@ const ANCHOR_SCROLL_SUPPRESS_MS = 900;
 
 function linkClassName(active) {
   return active
-    ? "rounded-full bg-eco-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm lg:px-4"
-    : "rounded-full px-3.5 py-2 text-sm font-medium text-eco-emerald-800 transition hover:bg-eco-emerald-100 lg:px-4";
+    ? "rounded-full bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm lg:px-4"
+    : "rounded-full px-3.5 py-2 text-sm font-medium text-foreground transition hover:bg-surface-raised lg:px-4";
 }
 
 export default function HomeHeader() {
   const pathname = usePathname() || "";
   const isHome = pathname === "/";
+  const hideHeader = pathname.startsWith("/login");
   const navLinks = useMemo(() => {
     return [
       { href: isHome ? "#reciclaje" : "/#reciclaje", label: "Reciclaje", isAnchor: true },
       { href: isHome ? "#separacion" : "/#separacion", label: "Separación", isAnchor: true },
       { href: "/game", label: "Jugar", isAnchor: false },
       { href: "/ranking", label: "Ranking", isAnchor: false },
-      { href: "/perfil", label: "Perfil", isAnchor: false },
     ];
   }, [isHome]);
   const { session, loading, isConfigured } = useAuth();
   const { theme, toggle } = useTheme();
+  const [themeReady, setThemeReady] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [homeHeaderHidden, setHomeHeaderHidden] = useState(false);
   const [homeSpacerPx, setHomeSpacerPx] = useState(64);
   const menuRef = useRef(null);
   const lastScrollY = useRef(0);
   const suppressAutoHideUntil = useRef(0);
+
+  useEffect(() => {
+    setThemeReady(true);
+  }, []);
 
   const beginAnchorNavigation = useCallback(() => {
     if (!isHome) return;
@@ -143,6 +148,9 @@ export default function HomeHeader() {
     ? "fixed top-0 left-0 right-0"
     : "sticky top-0";
   const translateClasses = homeHidden ? "-translate-y-full" : "translate-y-0";
+  const toggleFadeClass = themeReady ? "opacity-100" : "opacity-0";
+
+  if (hideHeader) return null;
 
   return (
     <>
@@ -155,15 +163,15 @@ export default function HomeHeader() {
       ) : null}
       <header
         ref={menuRef}
-        className={`${positionClasses} z-40 border-b border-eco-emerald-200/80 bg-eco-emerald-50/95 backdrop-blur-md transition-transform duration-300 ease-out ${translateClasses}`}
+        className={`${positionClasses} z-40 border-b border-border bg-background/90 backdrop-blur-md transition-transform duration-300 ease-out ${translateClasses}`}
       >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 rounded-xl px-1 py-1">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-eco-emerald-600 text-base font-bold text-white shadow-sm sm:h-10 sm:w-10 sm:text-lg">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-sm sm:h-10 sm:w-10 sm:text-lg">
             E
           </span>
-          <span className="text-lg font-bold tracking-tight text-eco-emerald-900 sm:text-xl">
+          <span className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
             EcoURP
           </span>
         </Link>
@@ -191,7 +199,7 @@ export default function HomeHeader() {
           <button
             type="button"
             onClick={toggle}
-            className="ml-1 inline-flex items-center gap-2 rounded-full border border-eco-emerald-200 bg-white px-3.5 py-2 text-sm font-semibold text-eco-emerald-800 shadow-sm transition hover:bg-eco-emerald-50"
+            className={`ml-1 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:bg-surface-raised transition-opacity duration-200 ${toggleFadeClass}`}
             aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
             title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
           >
@@ -213,7 +221,7 @@ export default function HomeHeader() {
           ) : (
             <Link
               href="/login"
-              className="ml-1 rounded-full bg-eco-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-eco-emerald-700"
+              className="ml-1 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition hover:opacity-90"
             >
               Iniciar sesión
             </Link>
@@ -224,7 +232,7 @@ export default function HomeHeader() {
         <button
           type="button"
           onClick={() => setMobileMenuOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-eco-emerald-200 bg-white text-eco-emerald-800 shadow-sm transition hover:bg-eco-emerald-50 md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-foreground shadow-sm transition hover:bg-surface-raised md:hidden"
           aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={mobileMenuOpen}
         >
@@ -242,7 +250,7 @@ export default function HomeHeader() {
 
       {/* Mobile menu panel */}
       {mobileMenuOpen && (
-        <div className="border-t border-eco-emerald-200/60 bg-eco-emerald-50/95 px-4 pb-5 pt-3 backdrop-blur-md md:hidden">
+        <div className="border-t border-border bg-background/95 px-4 pb-5 pt-3 backdrop-blur-md md:hidden">
           <nav className="flex flex-col items-end gap-1">
             {navLinks.map((link) => {
               const active = !link.isAnchor && pathname === link.href;
@@ -254,7 +262,7 @@ export default function HomeHeader() {
                     if (isHome) beginAnchorNavigation();
                     setMobileMenuOpen(false);
                   }}
-                  className="rounded-xl px-4 py-3 text-sm font-medium text-eco-emerald-800 transition hover:bg-eco-emerald-100"
+                  className="rounded-xl px-4 py-3 text-sm font-medium text-foreground transition hover:bg-surface-raised"
                 >
                   {link.label}
                 </a>
@@ -264,7 +272,7 @@ export default function HomeHeader() {
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`rounded-xl px-4 py-3 text-sm font-medium transition ${
-                    active ? "bg-eco-emerald-600 text-white" : "text-eco-emerald-800 hover:bg-eco-emerald-100"
+                    active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-surface-raised"
                   }`}
                   aria-current={active ? "page" : undefined}
                 >
@@ -274,14 +282,14 @@ export default function HomeHeader() {
             })}
           </nav>
 
-          <div className="mt-3 flex flex-col gap-2 border-t border-eco-emerald-200/60 pt-3">
+          <div className="mt-3 flex flex-col gap-2 border-t border-border/60 pt-3">
             <button
               type="button"
               onClick={() => {
                 toggle();
                 setMobileMenuOpen(false);
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-eco-emerald-200 bg-white px-5 py-3 text-sm font-semibold text-eco-emerald-800 shadow-sm transition hover:bg-eco-emerald-50"
+              className={`flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground shadow-sm transition hover:bg-surface-raised transition-opacity duration-200 ${toggleFadeClass}`}
             >
               {theme === "dark" ? (
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
@@ -303,7 +311,7 @@ export default function HomeHeader() {
               <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex w-full items-center justify-center rounded-xl bg-eco-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-eco-emerald-700"
+                className="flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:opacity-90"
               >
                 Iniciar sesión
               </Link>

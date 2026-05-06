@@ -93,8 +93,8 @@ export default function GameUI({ state, onSelectType, onDismissFeedback, layout 
     ? "pointer-events-auto absolute bottom-24 left-1/2 w-full max-w-2xl -translate-x-1/2 px-2 sm:bottom-32 sm:px-0"
     : "pointer-events-auto mt-3 w-full";
   const feedbackCardClassName = isOverlay
-    ? "rounded-2xl border border-rose-200 bg-white/95 p-3 shadow-2xl shadow-rose-900/10 backdrop-blur sm:p-5"
-    : "rounded-2xl border border-rose-200 bg-white/95 p-3 shadow-xl shadow-rose-900/10 backdrop-blur";
+    ? "rounded-2xl border border-rose-200/70 bg-card/95 p-3 shadow-2xl shadow-rose-900/10 backdrop-blur sm:p-5"
+    : "rounded-2xl border border-rose-200/70 bg-card/95 p-3 shadow-xl shadow-rose-900/10 backdrop-blur";
 
   useEffect(() => {
     if (scoreRef.current) {
@@ -133,30 +133,30 @@ export default function GameUI({ state, onSelectType, onDismissFeedback, layout 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           <div
             ref={scoreRef}
-            className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-2.5 py-2 text-eco-emerald-900 shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
+            className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
           >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-eco-emerald-600 sm:text-xs">Puntos</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Puntos</p>
             <p className="mt-1 text-lg font-black sm:text-2xl">{state.score}</p>
           </div>
 
           <div
             ref={livesRef}
-            className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-2.5 py-2 text-eco-emerald-900 shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
+            className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
           >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-eco-emerald-600 sm:text-xs">Vidas</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Vidas</p>
             <p className="mt-1 text-lg font-black sm:text-2xl">{state.lives === null ? "INF" : state.lives}</p>
           </div>
 
-          <div className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-2.5 py-2 text-eco-emerald-900 shadow-md backdrop-blur-sm sm:px-4 sm:py-3">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-eco-emerald-600 sm:text-xs">Racha</p>
+          <div className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Racha</p>
             <p className="mt-1 text-lg font-black sm:text-2xl">{state.streak}</p>
           </div>
 
           <div
             ref={timerRef}
-            className="rounded-2xl border border-eco-emerald-200/80 bg-white/84 px-2.5 py-2 text-eco-emerald-900 shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
+            className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
           >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-eco-emerald-600 sm:text-xs">Tiempo</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Tiempo</p>
             <p className="mt-1 text-lg font-black sm:text-2xl">{formatTimer(state.timerMs)}</p>
           </div>
         </div>
@@ -201,7 +201,7 @@ export default function GameUI({ state, onSelectType, onDismissFeedback, layout 
               <AnimatedButton
                 type="button"
                 onClick={onDismissFeedback}
-                className="rounded-full border border-rose-200 bg-white px-3 py-1 text-xs font-bold text-rose-700"
+                className="rounded-full border border-rose-200/70 bg-card px-3 py-1 text-xs font-bold text-rose-700"
               >
                 {state.wrongPauseMs > 0 ? "Continuar" : "Cerrar"}
               </AnimatedButton>

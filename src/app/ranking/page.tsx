@@ -56,16 +56,16 @@ export default async function RankingPage({
 
   if (error) {
     return (
-      <div className="min-h-screen bg-eco-emerald-50 px-4 py-10 sm:px-6">
-        <div className="mx-auto max-w-4xl rounded-3xl border border-red-200 bg-white p-6 text-sm text-red-700 shadow-sm">
+      <div className="min-h-screen bg-background px-4 py-10 sm:px-6">
+        <div className="mx-auto max-w-4xl rounded-3xl border border-rose-200/70 bg-card p-6 text-sm text-rose-600 shadow-sm">
           <p className="font-semibold">No se pudo cargar el ranking.</p>
-          <p className="mt-2 text-red-600/90">{error.message}</p>
-          <p className="mt-3 text-xs text-red-600/80">
+          <p className="mt-2 text-rose-500/90">{error.message}</p>
+          <p className="mt-3 text-xs text-rose-500/80">
             Verifica las politicas de RLS para permitir lectura del leaderboard.
           </p>
           <Link
             href="/"
-            className="mt-4 inline-flex items-center justify-center rounded-2xl border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-700"
+            className="mt-4 inline-flex items-center justify-center rounded-2xl border border-rose-200/70 bg-card px-4 py-2 text-xs font-semibold text-rose-600"
           >
             Volver al inicio
           </Link>

@@ -111,7 +111,7 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
       <button
         type="button"
         onClick={togglePanel}
-        className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+        className="inline-flex items-center justify-center rounded-full border border-border bg-card/20 px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-card/30"
       >
         Cambiar avatar
       </button>
@@ -125,7 +125,7 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
           transitionTimingFunction: "ease, ease",
         }}
       >
-        <div className="max-h-[60vh] overflow-y-auto rounded-2xl border border-white/30 bg-white/95 p-3 text-[#1a5c3a] shadow-sm backdrop-blur-sm sm:p-4">
+        <div className="max-h-[60vh] overflow-y-auto rounded-2xl border border-border bg-card/95 p-3 text-foreground shadow-sm backdrop-blur-sm sm:p-4">
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
             {AVATARS.map((avatar) => {
               const unlocked = isUnlocked(avatar, userStats);
@@ -144,8 +144,8 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
                   data-unlock={avatar.unlockCondition}
                   className={`relative flex min-h-[100px] flex-col items-center rounded-xl border px-2 py-2.5 text-center transition sm:min-h-[132px] sm:rounded-2xl sm:px-3 sm:py-3 ${
                     isSelected
-                      ? "border-[#2d9e6b] bg-[#e8f5ee]"
-                      : "border-[#d4e9dc] bg-white"
+                      ? "border-primary/60 bg-accent"
+                      : "border-border bg-card"
                   } ${
                     unlocked
                       ? "cursor-pointer duration-150 hover:scale-[1.03]"
@@ -155,12 +155,12 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
                   <span className={`leading-none ${unlocked ? "text-[26px] sm:text-[32px]" : "text-[26px] sm:text-[32px] grayscale"}`}>
                     {avatar.emoji}
                   </span>
-                  <span className="mt-1.5 text-xs font-semibold text-[#0d2b1a] sm:mt-2 sm:text-sm">{avatar.name}</span>
+                  <span className="mt-1.5 text-xs font-semibold text-foreground sm:mt-2 sm:text-sm">{avatar.name}</span>
 
                   {unlocked ? (
-                    <span className="mt-0.5 text-[10px] font-semibold text-[#2d9e6b] sm:mt-1 sm:text-xs">Libre</span>
+                    <span className="mt-0.5 text-[10px] font-semibold text-primary sm:mt-1 sm:text-xs">Libre</span>
                   ) : (
-                    <span className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#4a7c5f] sm:mt-1 sm:gap-1 sm:text-xs">
+                    <span className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground sm:mt-1 sm:gap-1 sm:text-xs">
                       <LockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       <span className="line-clamp-2">{avatar.unlockCondition}</span>
                     </span>
@@ -171,7 +171,7 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#c7e7d8] bg-[#e8f5ee] px-3 py-1 text-xs font-semibold text-[#1a5c3a]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1 text-xs font-semibold text-foreground">
               <span className="text-base leading-none">{selectedAvatar.emoji}</span>
               {selectedAvatar.name}
             </div>
@@ -180,7 +180,7 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
               type="button"
               onClick={handleSaveAvatar}
               disabled={!isDirty || isSaving}
-              className="inline-flex min-w-[120px] items-center justify-center gap-1.5 rounded-xl bg-[#2d9e6b] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#247f57] disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[150px] sm:gap-2 sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-sm"
+              className="inline-flex min-w-[120px] items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[150px] sm:gap-2 sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-sm"
             >
               {saveStatus === "saving" ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : null}
               {saveStatus === "success" ? <CheckIcon className="h-4 w-4" /> : null}
@@ -188,7 +188,7 @@ export default function AvatarSelector({ currentAvatarId, userStats, onSave }: A
             </button>
 
             {saveStatus === "error" ? (
-              <p className="text-xs font-semibold text-[#9a3727]">{saveError || "No se pudo guardar el avatar."}</p>
+              <p className="text-xs font-semibold text-rose-600">{saveError || "No se pudo guardar el avatar."}</p>
             ) : null}
           </div>
         </div>

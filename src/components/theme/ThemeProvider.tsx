@@ -6,11 +6,12 @@ type Theme = "light" | "dark";
 type ThemeSetting = Theme | "system";
 
 const STORAGE_KEY = "ecourp-theme";
+const DEFAULT_SETTING: ThemeSetting = "light";
 
 type ThemeContextValue = {
   theme: Theme;
   setting: ThemeSetting;
-  setSetting: (next: ThemeSetting) => void;
+  setSetting: (next: ThemeSetting | ((prev: ThemeSetting) => ThemeSetting)) => void;
   toggle: () => void;
 };
 
@@ -26,32 +27,57 @@ function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [setting, setSettingState] = useState<ThemeSetting>("system");
-  const [theme, setTheme] = useState<Theme>("light");
+function getStoredSetting(): ThemeSetting | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY) as ThemeSetting | null;
+    if (stored === "light" || stored === "dark" || stored === "system") return stored;
+  } catch {
+    // ignore
+  }
+  return null;
+}
 
-  const setSetting = useCallback((next: ThemeSetting) => {
-    setSettingState(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // ignore
-    }
-  }, []);
+function resolveTheme(setting: ThemeSetting): Theme {
+  return setting === "system" ? getSystemTheme() : setting;
+}
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [setting, setSettingState] = useState<ThemeSetting>(DEFAULT_SETTING);
+  const [theme, setTheme] = useState<Theme>(() => resolveTheme(DEFAULT_SETTING));
+
+  const setSetting = useCallback(
+    (next: ThemeSetting | ((prev: ThemeSetting) => ThemeSetting)) => {
+      setSettingState((prev) => {
+        const resolved = typeof next === "function" ? next(prev) : next;
+        try {
+          window.localStorage.setItem(STORAGE_KEY, resolved);
+        } catch {
+          // ignore
+        }
+        return resolved;
+      });
+    },
+    []
+  );
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY) as ThemeSetting | null;
-      if (stored === "light" || stored === "dark" || stored === "system") {
+    const stored = getStoredSetting();
+    if (stored) {
+      if (stored !== setting) {
         setSettingState(stored);
       }
+      return;
+    }
+    try {
+      window.localStorage.setItem(STORAGE_KEY, setting);
     } catch {
       // ignore
     }
   }, []);
 
   useEffect(() => {
-    const resolved = setting === "system" ? getSystemTheme() : setting;
+    const resolved = resolveTheme(setting);
     setTheme(resolved);
     applyTheme(resolved);
   }, [setting]);

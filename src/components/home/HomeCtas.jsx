@@ -17,14 +17,14 @@ export default function HomeCtas({ className = "" }) {
       </a>
       <Link
         href="/game"
-        className="inline-flex items-center justify-center rounded-2xl border-2 border-eco-emerald-600 bg-white px-8 py-3.5 text-sm font-semibold text-eco-emerald-800 shadow-sm transition hover:bg-eco-emerald-50"
+        className="inline-flex items-center justify-center rounded-2xl border-2 border-border bg-card px-8 py-3.5 text-sm font-semibold text-foreground shadow-sm transition hover:bg-surface-raised"
       >
         Probar el juego
       </Link>
       {showAccess ? (
         <Link
           href="/login"
-          className="inline-flex items-center justify-center rounded-2xl bg-eco-emerald-600 px-8 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-eco-emerald-700"
+          className="inline-flex items-center justify-center rounded-2xl bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition hover:opacity-90"
         >
           Entrar a la plataforma
         </Link>
@@ -42,7 +42,7 @@ export function FooterAccessLink() {
   return (
     <Link
       href="/login"
-      className="font-medium text-eco-emerald-700 underline-offset-2 hover:text-eco-emerald-900 hover:underline"
+      className="font-medium text-primary underline-offset-2 hover:text-foreground hover:underline"
     >
       Acceso docentes y alumnado
     </Link>

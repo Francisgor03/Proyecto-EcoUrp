@@ -64,35 +64,35 @@ export default function RankingUserCard({ rows, compact = false }) {
   }
 
   return (
-    <section className="rounded-3xl border border-eco-emerald-200 bg-white/95 p-6 shadow-lg shadow-eco-emerald-900/5">
-      <h2 className="text-lg font-semibold text-eco-emerald-900">Tu posicion</h2>
-      <p className="mt-1 text-sm text-eco-emerald-700">Tu mejor resultado y ranking actual.</p>
+    <section className="rounded-3xl border border-border bg-card/95 p-6 shadow-lg shadow-black/5">
+      <h2 className="text-lg font-semibold text-foreground">Tu posicion</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Tu mejor resultado y ranking actual.</p>
 
       {!user ? (
-        <div className="mt-6 rounded-2xl border border-eco-emerald-100 bg-eco-emerald-50/70 p-4">
-          <p className="text-sm font-semibold text-eco-emerald-900">
+        <div className="mt-6 rounded-2xl border border-border bg-surface-raised/70 p-4">
+          <p className="text-sm font-semibold text-foreground">
             Inicia sesion para guardar tu puntaje en el ranking.
           </p>
-          <p className="mt-2 text-xs text-eco-emerald-700">
+          <p className="mt-2 text-xs text-muted-foreground">
             Si aun no tienes cuenta, puedes crearla en segundos.
           </p>
           <Link
             href="/login"
-            className="mt-4 inline-flex items-center justify-center rounded-2xl bg-eco-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-eco-emerald-700"
+            className="mt-4 inline-flex items-center justify-center rounded-2xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
           >
             Iniciar sesion o registrarme
           </Link>
         </div>
       ) : (
         <div className="mt-6 space-y-4">
-          <div className="rounded-2xl border border-eco-emerald-100 bg-eco-emerald-50/70 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-500">Mejor puntaje</p>
-            <p className="mt-2 text-2xl font-bold text-eco-emerald-900">{bestLabel}</p>
+          <div className="rounded-2xl border border-border bg-surface-raised/70 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Mejor puntaje</p>
+            <p className="mt-2 text-2xl font-bold text-foreground">{bestLabel}</p>
           </div>
-          <div className="rounded-2xl border border-eco-emerald-100 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-500">Posicion</p>
-            <p className="mt-2 text-2xl font-bold text-eco-emerald-900">{rankLabel}</p>
-            <p className="mt-2 text-xs text-eco-emerald-700">
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Posicion</p>
+            <p className="mt-2 text-2xl font-bold text-foreground">{rankLabel}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
               {typeof userRank === "number"
                 ? "Sigue jugando para mejorar tu posicion."
                 : "Juega una partida para aparecer en el ranking."}

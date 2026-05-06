@@ -110,7 +110,7 @@ function AchievementDot({ achievement, unlocked }) {
       >
         <span
           className={`inline-block h-4 w-4 rounded-full border-2 border-card shadow-sm sm:h-[18px] sm:w-[18px] ${
-            unlocked ? colorClass : "bg-eco-emerald-200"
+            unlocked ? colorClass : "bg-surface-raised"
           }`}
           title={achievement.title}
         />

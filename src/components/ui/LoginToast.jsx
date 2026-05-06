@@ -36,13 +36,13 @@ export default function LoginToast() {
 
   return (
     <div className="fixed right-4 top-4 z-50 w-[min(92vw,360px)]">
-      <div className="flex items-start gap-3 rounded-2xl border border-eco-emerald-200 bg-white/95 px-4 py-3 shadow-lg shadow-eco-emerald-900/10 backdrop-blur">
-        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-eco-emerald-600 text-sm font-bold text-white">
+      <div className="flex items-start gap-3 rounded-2xl border border-border bg-card/95 px-4 py-3 shadow-lg shadow-black/10 backdrop-blur">
+        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
           ✓
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-eco-emerald-900">Iniciaste sesion</p>
-          <p className="mt-1 text-xs text-eco-emerald-700">
+          <p className="text-sm font-semibold text-foreground">Iniciaste sesion</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             Estas dentro de tu cuenta EcoURP.
           </p>
         </div>
@@ -50,7 +50,7 @@ export default function LoginToast() {
           type="button"
           aria-label="Cerrar aviso"
           onClick={() => setVisible(false)}
-          className="flex h-6 w-6 items-center justify-center rounded-full text-eco-emerald-600 transition hover:bg-eco-emerald-50"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-primary transition hover:bg-surface-raised"
         >
           ×
         </button>
