@@ -44,6 +44,23 @@ export default function UserMenu() {
   }, [user]);
 
   useEffect(() => {
+    function handleProfileUpdated(event) {
+      const detail = event?.detail || {};
+      if (typeof detail.displayName === "string") {
+        setDisplayName(detail.displayName.trim());
+        setProfileLoaded(true);
+      }
+      if (typeof detail.avatarId === "string") {
+        setAvatarId(getAvatarById(detail.avatarId).id);
+        setProfileLoaded(true);
+      }
+    }
+
+    window.addEventListener("ecourp:profile-updated", handleProfileUpdated);
+    return () => window.removeEventListener("ecourp:profile-updated", handleProfileUpdated);
+  }, []);
+
+  useEffect(() => {
     function handleClick(event) {
       if (!menuRef.current) return;
       if (menuRef.current.contains(event.target)) return;

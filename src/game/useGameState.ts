@@ -465,7 +465,7 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
       return {
         ...previous,
         saveStatus: "saving",
-        saveMessage: "Guardando resultado...",
+        saveMessage: "Resultado guardado",
       };
     });
 
@@ -484,7 +484,7 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
         return {
           ...previous,
           saveStatus: result.ok ? "saved" : "error",
-          saveMessage: result.message,
+          saveMessage: result.ok ? "Resultado guardado" : result.message,
         };
       });
     })();

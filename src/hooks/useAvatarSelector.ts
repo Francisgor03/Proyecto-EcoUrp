@@ -85,6 +85,14 @@ export function useAvatarSelector({
       if (error) {
         throw new Error(error.message);
       }
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("ecourp:profile-updated", {
+            detail: { avatarId: selectedId },
+          })
+        );
+      }
     } catch (error) {
       if (optimisticApplied) {
         try {

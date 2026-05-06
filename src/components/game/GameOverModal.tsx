@@ -157,7 +157,7 @@ export default function GameOverModal({
         </div>
 
         <p className="mt-4 text-xs font-medium text-muted-foreground">
-          {saveStatus === "saving" ? "Guardando resultado..." : saveMessage ?? ""}
+          {saveStatus === "error" ? saveMessage ?? "" : "Resultado guardado"}
         </p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">

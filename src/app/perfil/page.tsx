@@ -471,6 +471,14 @@ export default function PerfilPage() {
     setStatusMessage("Nombre actualizado.");
     setSaveState("success");
 
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("ecourp:profile-updated", {
+          detail: { displayName: trimmedName },
+        })
+      );
+    }
+
     if (saveResetTimer.current) {
       window.clearTimeout(saveResetTimer.current);
     }
