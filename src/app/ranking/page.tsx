@@ -139,28 +139,28 @@ export default async function RankingPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-eco-emerald-100/70 via-eco-emerald-50 to-eco-emerald-50 px-4 py-8 sm:px-6 sm:py-10">
+    <div className="min-h-screen bg-background px-4 py-8 sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-6xl">
-        <section className="rounded-3xl border border-eco-emerald-200 bg-white/95 p-5 shadow-lg shadow-eco-emerald-900/5 sm:p-8">
-          <div className="border-b border-eco-emerald-100 pb-5">
+        <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-8">
+          <div className="border-b border-border pb-5">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-eco-emerald-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
                 Ranking EcoURP
               </p>
-              <h1 className="mt-1 text-2xl font-bold text-eco-emerald-950 sm:text-3xl">
+              <h1 className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">
                 Tabla de posiciones
               </h1>
-              <p className="mt-2 text-sm text-eco-emerald-700">
+              <p className="mt-2 text-sm text-muted-foreground">
                 Top {MAX_ROWS} jugadores en modo {MODE_LABELS[mode].toLowerCase()}.
               </p>
             </div>
           </div>
 
-          <div className="mt-5 rounded-2xl border border-eco-emerald-100 bg-eco-emerald-50/40 p-4 sm:p-5">
+          <div className="mt-5 rounded-2xl border border-border bg-surface-raised/50 p-4 sm:p-5">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
               <div className="min-w-0 flex-1 space-y-5">
                 <div>
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-eco-emerald-600">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Modo de juego
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -170,8 +170,8 @@ export default async function RankingPage({
                         href={`/ranking?mode=${value}${range === "weekly" ? "&range=weekly" : ""}`}
                         className={`rounded-full border px-4 py-2 text-xs font-semibold sm:text-sm ${
                           mode === value
-                            ? "border-eco-emerald-500 bg-eco-emerald-600 text-white"
-                            : "border-eco-emerald-200 bg-white text-eco-emerald-700 shadow-sm"
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-foreground shadow-sm"
                         }`}
                       >
                         {label}
@@ -180,7 +180,7 @@ export default async function RankingPage({
                   </div>
                 </div>
                 <div>
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-eco-emerald-600">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Periodo
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -188,8 +188,8 @@ export default async function RankingPage({
                       href={`/ranking?mode=${mode}`}
                       className={`rounded-full border px-4 py-2 text-xs font-semibold sm:text-sm ${
                         range === "all"
-                          ? "border-eco-emerald-500 bg-eco-emerald-600 text-white"
-                          : "border-eco-emerald-200 bg-white text-eco-emerald-700 shadow-sm"
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-foreground shadow-sm"
                       }`}
                     >
                       Todo el tiempo
@@ -198,8 +198,8 @@ export default async function RankingPage({
                       href={`/ranking?mode=${mode}&range=weekly`}
                       className={`rounded-full border px-4 py-2 text-xs font-semibold sm:text-sm ${
                         range === "weekly"
-                          ? "border-eco-emerald-500 bg-eco-emerald-600 text-white"
-                          : "border-eco-emerald-200 bg-white text-eco-emerald-700 shadow-sm"
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-foreground shadow-sm"
                       }`}
                     >
                       Ultimos 7 dias
@@ -212,9 +212,9 @@ export default async function RankingPage({
           </div>
 
           <div className="mt-6">
-            <h2 className="text-lg font-semibold text-eco-emerald-900">Clasificacion</h2>
-            <p className="mt-1 text-sm text-eco-emerald-700">Puntajes ordenados por record.</p>
-            <div className="mt-4 rounded-2xl border border-eco-emerald-100 bg-white">
+            <h2 className="text-lg font-semibold text-foreground">Clasificacion</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Puntajes ordenados por record.</p>
+            <div className="mt-4 rounded-2xl border border-border bg-card">
               <RankingTable
                 rows={rankingRows}
                 profileNames={profileNames}

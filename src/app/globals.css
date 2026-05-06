@@ -1,7 +1,73 @@
 @import "tailwindcss";
 
+/* -----------------------------------------------------------------------------
+   Tokens semánticos (EcoURP) — contraste orientado a WCAG AA sobre fondos dados.
+   Modo claro: base menta suave. Modo oscuro: base casi negra con tinte verdoso
+   (no “verde bosque” plano); primario #10b981 sobre oscuro ~12:1 relación logo.
+----------------------------------------------------------------------------- */
+
+:root {
+  --background: #ecfdf5;
+  --foreground: #0b1f1a;
+  --card: #ffffff;
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+  --muted-foreground: #64748b;
+  --accent: #d1fae5;
+  --accent-foreground: #065f46;
+  /* Elevación: borde sutil (evita sombras pesadas en dark) */
+  --border: rgba(6, 95, 70, 0.14);
+  --surface-raised: #f0fdf4;
+  /* Ranking / fila propia */
+  --highlight-self: rgba(5, 150, 105, 0.14);
+  --highlight-self-ring: rgba(5, 150, 105, 0.35);
+}
+
+html[data-theme="dark"] {
+  --background: #0b1210;
+  --foreground: #e2e8f0;
+  --card: #16211e;
+  --primary: #10b981;
+  --primary-foreground: #04120d;
+  --muted-foreground: #94a3b8;
+  --accent: #065f46;
+  --accent-foreground: #a7f3d0;
+  --border: rgba(148, 163, 184, 0.14);
+  --surface-raised: #121a18;
+  --highlight-self: rgba(16, 185, 129, 0.18);
+  --highlight-self-ring: rgba(52, 211, 153, 0.4);
+
+  /*
+    Escala “eco-emerald” en oscuro: superficies = gris verdoso (slate tint),
+    no verde saturado encima de verde. Texto en 800–950 = slate claro legible.
+  */
+  --color-eco-emerald-50: #121a18;
+  --color-eco-emerald-100: #161f1c;
+  --color-eco-emerald-200: #22302b;
+  --color-eco-emerald-300: #2f3f39;
+  --color-eco-emerald-400: #475955;
+  --color-eco-emerald-500: #10b981;
+  --color-eco-emerald-600: #34d399;
+  --color-eco-emerald-700: #94a3b8;
+  --color-eco-emerald-800: #cbd5e1;
+  --color-eco-emerald-900: #e2e8f0;
+  --color-eco-emerald-950: #f1f5f9;
+
+  --color-eco-lime-50: #121a16;
+  --color-eco-lime-100: #151f19;
+  --color-eco-lime-200: #1f2a22;
+  --color-eco-lime-300: #2a3b2e;
+  --color-eco-lime-400: #3f6212;
+  --color-eco-lime-500: #65a30d;
+  --color-eco-lime-600: #84cc16;
+  --color-eco-lime-700: #a3e635;
+  --color-eco-lime-800: #d9f99d;
+  --color-eco-lime-900: #ecfccb;
+  --color-eco-lime-950: #f7fee7;
+}
+
 @theme {
-  /* Emerald — tonos principales (confianza, naturaleza) */
+  /* Emerald — modo claro (default en utilidades) */
   --color-eco-emerald-50: #ecfdf5;
   --color-eco-emerald-100: #d1fae5;
   --color-eco-emerald-200: #a7f3d0;
@@ -14,7 +80,6 @@
   --color-eco-emerald-900: #064e3b;
   --color-eco-emerald-950: #022c22;
 
-  /* Lime — acentos (energía, acción) */
   --color-eco-lime-50: #f7fee7;
   --color-eco-lime-100: #ecfccb;
   --color-eco-lime-200: #d9f99d;
@@ -27,40 +92,23 @@
   --color-eco-lime-900: #365314;
   --color-eco-lime-950: #1a2e05;
 
-}
-
-html[data-theme="dark"] {
-  /* Mantiene la paleta verdosa pero invierte el rango para UI oscura:
-     - 50/100: superficies oscuras
-     - 900/950: texto claro y acentos suaves
-  */
-  --color-eco-emerald-50: #061a14;
-  --color-eco-emerald-100: #07231b;
-  --color-eco-emerald-200: #0a3126;
-  --color-eco-emerald-300: #0f4333;
-  --color-eco-emerald-400: #14624a;
-  --color-eco-emerald-500: #10b981;
-  --color-eco-emerald-600: #24c78b;
-  --color-eco-emerald-700: #5be3b2;
-  --color-eco-emerald-800: #a7f3d0;
-  --color-eco-emerald-900: #d1fae5;
-  --color-eco-emerald-950: #ecfdf5;
-
-  --color-eco-lime-50: #0b1602;
-  --color-eco-lime-100: #122205;
-  --color-eco-lime-200: #1a3307;
-  --color-eco-lime-300: #26470c;
-  --color-eco-lime-400: #3f6212;
-  --color-eco-lime-500: #65a30d;
-  --color-eco-lime-600: #84cc16;
-  --color-eco-lime-700: #a3e635;
-  --color-eco-lime-800: #d9f99d;
-  --color-eco-lime-900: #ecfccb;
-  --color-eco-lime-950: #f7fee7;
+  /* Puente a utilidades Tailwind: bg-background, text-foreground, etc. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-surface-raised: var(--surface-raised);
 }
 
 body {
-  @apply bg-eco-emerald-50 text-eco-emerald-950 antialiased;
+  background-color: var(--background);
+  color: var(--foreground);
+  @apply antialiased;
 }
 
 @keyframes profileAvatarBounce {
@@ -124,4 +172,15 @@ body {
 .avatar-locked-tooltip:hover::after {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+html[data-theme="dark"] .avatar-locked-tooltip::before {
+  border-color: var(--card) transparent transparent transparent;
+}
+
+html[data-theme="dark"] .avatar-locked-tooltip::after {
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--foreground) 18%, transparent);
+  color: var(--foreground);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }

@@ -32,16 +32,16 @@ export default function RankingUserCard({ rows, compact = false }) {
 
   if (compact) {
     return (
-      <div className="flex w-full min-w-[min(100%,18rem)] shrink-0 flex-col justify-center gap-3 rounded-2xl border border-eco-emerald-200 bg-white px-5 py-4 shadow-sm sm:w-auto sm:min-w-[17.5rem] sm:px-6 sm:py-5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-eco-emerald-500 sm:text-xs">
+      <div className="flex w-full min-w-[min(100%,18rem)] shrink-0 flex-col justify-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm sm:w-auto sm:min-w-[17.5rem] sm:px-6 sm:py-5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-primary sm:text-xs">
           Tu posicion
         </p>
         {!user ? (
           <div className="flex flex-col gap-2.5">
-            <p className="text-sm text-eco-emerald-700">Inicia sesion para ver tu puesto.</p>
+            <p className="text-sm text-muted-foreground">Inicia sesion para ver tu puesto.</p>
             <Link
               href="/login"
-              className="inline-flex items-center justify-center rounded-xl bg-eco-emerald-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-eco-emerald-700"
+              className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground hover:opacity-90"
             >
               Entrar
             </Link>
@@ -49,13 +49,13 @@ export default function RankingUserCard({ rows, compact = false }) {
         ) : (
           <div className="flex flex-wrap items-end gap-x-5 gap-y-1">
             <div>
-              <p className="text-xs font-medium text-eco-emerald-600">Ranking</p>
-              <p className="text-2xl font-bold leading-none text-eco-emerald-950 sm:text-3xl">{rankLabel}</p>
+              <p className="text-xs font-medium text-muted-foreground">Ranking</p>
+              <p className="text-2xl font-bold leading-none text-foreground sm:text-3xl">{rankLabel}</p>
             </div>
-            <div className="h-10 w-px shrink-0 bg-eco-emerald-200 sm:h-11" aria-hidden />
+            <div className="h-10 w-px shrink-0 bg-muted-foreground/30 sm:h-11" aria-hidden />
             <div>
-              <p className="text-xs font-medium text-eco-emerald-600">Mejor puntaje</p>
-              <p className="text-2xl font-bold leading-none text-eco-emerald-950 sm:text-3xl">{bestLabel}</p>
+              <p className="text-xs font-medium text-muted-foreground">Mejor puntaje</p>
+              <p className="text-2xl font-bold leading-none text-foreground sm:text-3xl">{bestLabel}</p>
             </div>
           </div>
         )}
