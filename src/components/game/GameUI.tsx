@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
-import { gsap } from "gsap";
+import { type ButtonHTMLAttributes, type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { WASTE_TYPES, type WasteTypeId } from "@/game/config/wasteTypes";
-import type { GameState } from "@/game/useGameState";
+import { getStreakMultiplier, type GameState } from "@/game/useGameState";
 
 interface GameUIProps {
   state: GameState;
   onSelectType: (type: WasteTypeId) => void;
   onDismissFeedback: () => void;
+  onTogglePause: () => void;
   layout?: "overlay" | "stacked";
 }
 
@@ -17,51 +18,16 @@ interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 function AnimatedButton({ children, className = "", ...props }: AnimatedButtonProps) {
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    const element = buttonRef.current;
-    if (!element) {
-      return;
-    }
-
-    const handleEnter = () => {
-      gsap.to(element, { scale: 1.06, y: -2, duration: 0.18, ease: "power2.out" });
-    };
-
-    const handleLeave = () => {
-      gsap.to(element, { scale: 1, y: 0, duration: 0.2, ease: "power2.out" });
-    };
-
-    const handleDown = () => {
-      gsap.to(element, { scale: 0.94, duration: 0.12, ease: "power2.out" });
-    };
-
-    const handleUp = () => {
-      gsap.to(element, { scale: 1.02, duration: 0.16, ease: "power2.out" });
-    };
-
-    element.addEventListener("mouseenter", handleEnter);
-    element.addEventListener("mouseleave", handleLeave);
-    element.addEventListener("mousedown", handleDown);
-    element.addEventListener("mouseup", handleUp);
-    element.addEventListener("focus", handleEnter);
-    element.addEventListener("blur", handleLeave);
-
-    return () => {
-      element.removeEventListener("mouseenter", handleEnter);
-      element.removeEventListener("mouseleave", handleLeave);
-      element.removeEventListener("mousedown", handleDown);
-      element.removeEventListener("mouseup", handleUp);
-      element.removeEventListener("focus", handleEnter);
-      element.removeEventListener("blur", handleLeave);
-    };
-  }, []);
-
   return (
-    <button ref={buttonRef} className={className} {...props}>
+    <motion.button
+      className={className}
+      whileHover={{ scale: 1.06, y: -2 }}
+      whileTap={{ scale: 0.94 }}
+      transition={{ type: "spring", stiffness: 520, damping: 32 }}
+      {...props}
+    >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
@@ -79,11 +45,25 @@ function formatPauseCountdown(pauseMs: number): string {
   return `${seconds}s`;
 }
 
-export default function GameUI({ state, onSelectType, onDismissFeedback, layout = "overlay" }: GameUIProps) {
-  const scoreRef = useRef<HTMLDivElement | null>(null);
-  const livesRef = useRef<HTMLDivElement | null>(null);
-  const timerRef = useRef<HTMLDivElement | null>(null);
-  const feedbackRef = useRef<HTMLDivElement | null>(null);
+function getStreakTone(multiplier: number): string {
+  if (multiplier >= 5) return "text-rose-500";
+  if (multiplier >= 3) return "text-orange-500";
+  if (multiplier >= 2) return "text-yellow-500";
+  return "text-slate-400";
+}
+
+export default function GameUI({
+  state,
+  onSelectType,
+  onDismissFeedback,
+  onTogglePause,
+  layout = "overlay",
+}: GameUIProps) {
+  const streakMultiplier = getStreakMultiplier(state.streak);
+  const streakToneClass = getStreakTone(streakMultiplier);
+  const pauseLabel = state.manualPaused ? "Reanudar" : "Pausa";
+  const livesLabel = state.lives === null ? "INF" : state.lives;
+  const timerLabel = formatTimer(state.timerMs);
 
   const isOverlay = layout === "overlay";
   const containerClassName = isOverlay
@@ -93,72 +73,90 @@ export default function GameUI({ state, onSelectType, onDismissFeedback, layout 
     ? "pointer-events-auto absolute bottom-24 left-1/2 w-full max-w-2xl -translate-x-1/2 px-2 sm:bottom-32 sm:px-0"
     : "pointer-events-auto mt-3 w-full";
   const feedbackCardClassName = isOverlay
-    ? "rounded-2xl border border-rose-200/70 bg-card/95 p-3 shadow-2xl shadow-rose-900/10 backdrop-blur sm:p-5"
-    : "rounded-2xl border border-rose-200/70 bg-card/95 p-3 shadow-xl shadow-rose-900/10 backdrop-blur";
-
-  useEffect(() => {
-    if (scoreRef.current) {
-      gsap.fromTo(scoreRef.current, { scale: 1.08 }, { scale: 1, duration: 0.26, ease: "power2.out" });
-    }
-  }, [state.score]);
-
-  useEffect(() => {
-    if (livesRef.current) {
-      gsap.fromTo(livesRef.current, { y: -3 }, { y: 0, duration: 0.24, ease: "power2.out" });
-    }
-  }, [state.lives]);
-
-  useEffect(() => {
-    if (timerRef.current) {
-      gsap.fromTo(timerRef.current, { opacity: 0.65 }, { opacity: 1, duration: 0.22, ease: "power2.out" });
-    }
-  }, [state.timerMs]);
-
-  useEffect(() => {
-    const panel = feedbackRef.current;
-    if (!panel || !state.wrongFeedback) {
-      return;
-    }
-
-    gsap.fromTo(
-      panel,
-      { autoAlpha: 0, y: 18, scale: 0.96 },
-      { autoAlpha: 1, y: 0, scale: 1, duration: 0.38, ease: "power3.out" },
-    );
-  }, [state.wrongFeedback]);
+    ? "rounded-2xl border border-rose-200/70 bg-card/95 p-3 shadow-2xl shadow-rose-900/10 backdrop-blur dark:border-rose-400/40 dark:bg-rose-950/70 sm:p-5"
+    : "rounded-2xl border border-rose-200/70 bg-card/95 p-3 shadow-xl shadow-rose-900/10 backdrop-blur dark:border-rose-400/40 dark:bg-rose-950/70";
 
   return (
     <div className={containerClassName}>
+      <div className="pointer-events-auto absolute left-3 top-3 z-30">
+        <AnimatedButton
+          type="button"
+          onClick={onTogglePause}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-card/85 text-foreground shadow-md backdrop-blur-sm hover:bg-card"
+          aria-pressed={state.manualPaused}
+          title={pauseLabel}
+          aria-label={pauseLabel}
+        >
+          {state.manualPaused ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M8 5h3v14H8V5zm5 0h3v14h-3V5z" />
+            </svg>
+          )}
+        </AnimatedButton>
+      </div>
       <div className="flex h-full flex-col justify-between">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-          <div
-            ref={scoreRef}
+          <motion.div
+            key={`score-${state.score}`}
+            initial={{ scale: 1.08 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.26, ease: "easeOut" }}
             className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
           >
             <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Puntos</p>
             <p className="mt-1 text-lg font-black sm:text-2xl">{state.score}</p>
-          </div>
+          </motion.div>
 
-          <div
-            ref={livesRef}
+          <motion.div
+            key={`lives-${livesLabel}`}
+            initial={{ y: -3 }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
             className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
           >
             <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Vidas</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl">{state.lives === null ? "INF" : state.lives}</p>
-          </div>
+            <p className="mt-1 text-lg font-black sm:text-2xl">{livesLabel}</p>
+          </motion.div>
 
           <div className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3">
             <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Racha</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl">{state.streak}</p>
+            <p className="mt-1 flex items-center gap-2 text-lg font-black sm:text-2xl">
+              <span className={streakToneClass}>{state.streak}</span>
+              <span className={`inline-flex items-center gap-1 text-xs font-semibold sm:text-sm ${streakToneClass}`}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="currentColor">
+                  <path d="M12 2c2.5 3.5 3 5.6 2 7.6 1.7-.3 3.6-2 3.6-4.8 2.6 2.3 4 5.4 4 8 0 5-4.2 9.2-9.6 9.2S2.4 17.8 2.4 12.8c0-3.4 1.7-6.6 4.6-8.7-.4 2.7.8 4.9 2.7 5.6C9 7.1 9.8 4.9 12 2z" />
+                </svg>
+                x{streakMultiplier}
+              </span>
+            </p>
           </div>
 
-          <div
-            ref={timerRef}
+          <motion.div
+            key={`timer-${timerLabel}`}
+            initial={{ opacity: 0.65 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
             className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
           >
             <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Tiempo</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl">{formatTimer(state.timerMs)}</p>
-          </div>
+            <p className="mt-1 text-lg font-black sm:text-2xl">{timerLabel}</p>
+          </motion.div>
         </div>
 
         <div className="pointer-events-auto grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
@@ -170,11 +168,10 @@ export default function GameUI({ state, onSelectType, onDismissFeedback, layout 
                 key={waste.id}
                 type="button"
                 onClick={() => onSelectType(waste.id)}
-                className={`rounded-2xl px-3 py-3 text-center shadow-lg transition-all sm:px-4 sm:py-4 ${
-                  selected
+                className={`rounded-2xl px-3 py-3 text-center shadow-lg transition-all sm:px-4 sm:py-4 ${selected
                     ? "ring-3 ring-white/80 ring-offset-2 ring-offset-transparent scale-105 shadow-xl"
                     : "opacity-80 hover:opacity-100 hover:shadow-xl"
-                }`}
+                  }`}
                 style={{ backgroundColor: waste.colorHex }}
                 aria-pressed={selected}
               >
@@ -187,36 +184,48 @@ export default function GameUI({ state, onSelectType, onDismissFeedback, layout 
         </div>
       </div>
 
-      {state.wrongFeedback ? (
-        <div ref={feedbackRef} className={feedbackWrapperClassName}>
-          <div className={feedbackCardClassName}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold text-rose-700 sm:text-sm">{state.wrongFeedback.title}</p>
-                <p className="mt-1 text-xs text-rose-900 sm:text-sm">
-                  Residuo: <span className="font-semibold">{state.wrongFeedback.residuo}</span> | Elegiste: {" "}
-                  <span className="font-semibold">{state.wrongFeedback.tachoElegido}</span>
-                </p>
+      <AnimatePresence>
+        {state.wrongFeedback ? (
+          <motion.div
+            className={feedbackWrapperClassName}
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.38, ease: "easeOut" }}
+          >
+            <div className={feedbackCardClassName}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold text-rose-700 dark:text-rose-200 sm:text-sm">
+                    {state.wrongFeedback.title}
+                  </p>
+                  <p className="mt-1 text-xs text-rose-900 dark:text-rose-100 sm:text-sm">
+                    Residuo: <span className="font-semibold">{state.wrongFeedback.residuo}</span> | Elegiste: {" "}
+                    <span className="font-semibold">{state.wrongFeedback.tachoElegido}</span>
+                  </p>
+                </div>
+                <AnimatedButton
+                  type="button"
+                  onClick={onDismissFeedback}
+                  className="rounded-full border border-rose-200/70 bg-card px-3 py-1 text-xs font-bold text-rose-700 dark:border-rose-400/40 dark:bg-rose-950/60 dark:text-rose-100"
+                >
+                  {state.wrongPauseMs > 0 ? "Continuar" : "Cerrar"}
+                </AnimatedButton>
               </div>
-              <AnimatedButton
-                type="button"
-                onClick={onDismissFeedback}
-                className="rounded-full border border-rose-200/70 bg-card px-3 py-1 text-xs font-bold text-rose-700"
-              >
-                {state.wrongPauseMs > 0 ? "Continuar" : "Cerrar"}
-              </AnimatedButton>
-            </div>
 
-            {state.wrongPauseMs > 0 ? (
-              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-rose-700">
-                Reanudando en {formatPauseCountdown(state.wrongPauseMs)}
+              {state.wrongPauseMs > 0 ? (
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-200">
+                  Reanudando en {formatPauseCountdown(state.wrongPauseMs)}
+                </p>
+              ) : null}
+
+              <p className="mt-3 text-xs leading-relaxed text-rose-800 dark:text-rose-100 sm:text-sm">
+                {state.wrongFeedback.body}
               </p>
-            ) : null}
-
-            <p className="mt-3 text-xs leading-relaxed text-rose-800 sm:text-sm">{state.wrongFeedback.body}</p>
-          </div>
-        </div>
-      ) : null}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

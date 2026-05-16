@@ -24,6 +24,9 @@ import { saveTachoHighScore } from "@/lib/saveTachoHighScore";
 export type ScoreSaveStatus = "idle" | "saving" | "saved" | "error";
 
 const WRONG_FEEDBACK_PAUSE_MS = 10000;
+const BASE_SCORE_PER_CATCH = 1;
+const STREAK_THRESHOLDS = [10, 20, 40, 80];
+const STREAK_MAX_MULTIPLIER = 1 + STREAK_THRESHOLDS.length;
 
 export interface GameRoundSummary extends GameSummary {
   roundId: number;
@@ -49,6 +52,7 @@ export interface UseGameStateActions {
   returnToMenu: () => void;
   setSelectedType: (type: WasteTypeId) => void;
   clearWrongFeedback: () => void;
+  togglePause: () => void;
   endGame: () => void;
 }
 
@@ -80,6 +84,25 @@ function computeAccuracy(correct: number, wrong: number, missed: number): number
   return Number(accuracy.toFixed(2));
 }
 
+export function getStreakMultiplier(streak: number): number {
+  const safeStreak = Math.max(0, Math.floor(streak));
+  let multiplier = 1;
+
+  for (const threshold of STREAK_THRESHOLDS) {
+    if (safeStreak >= threshold) {
+      multiplier += 1;
+    } else {
+      break;
+    }
+  }
+
+  return Math.min(STREAK_MAX_MULTIPLIER, multiplier);
+}
+
+function computeScoreDelta(nextStreak: number): number {
+  return BASE_SCORE_PER_CATCH * getStreakMultiplier(nextStreak);
+}
+
 function createInitialState(mode: GameModeId = "normal"): GameState {
   return {
     phase: "menu",
@@ -91,6 +114,7 @@ function createInitialState(mode: GameModeId = "normal"): GameState {
     timerMs: null,
     durationMs: 0,
     wrongPauseMs: 0,
+    manualPaused: false,
     correct: 0,
     wrong: 0,
     missed: 0,
@@ -109,7 +133,7 @@ function validateSummary(summary: GameSummary): PersistValidation {
   const safeWrong = Math.max(0, Math.floor(summary.wrong));
   const safeMissed = Math.max(0, Math.floor(summary.missed));
 
-  const derivedScore = safeCorrect;
+  const derivedScore = safeCorrect * BASE_SCORE_PER_CATCH * STREAK_MAX_MULTIPLIER;
   const rawScore = Number.isFinite(summary.score) ? Math.floor(summary.score) : 0;
   const score = Math.max(0, Math.min(rawScore, derivedScore));
 
@@ -218,6 +242,7 @@ function completeRound(current: GameState, reason: GameOverReason): GameState {
     phase: "game-over",
     timerMs: current.timerMs !== null ? Math.max(0, current.timerMs) : null,
     wrongPauseMs: 0,
+    manualPaused: false,
     summary,
     saveStatus: "idle",
     saveMessage: null,
@@ -267,6 +292,7 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           timerMs: modeConfig.timeLimitMs,
           durationMs: 0,
           wrongPauseMs: 0,
+          manualPaused: false,
           correct: 0,
           wrong: 0,
           missed: 0,
@@ -288,6 +314,7 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
       ...previous,
       phase: "menu",
       wrongPauseMs: 0,
+      manualPaused: false,
       wrongFeedback: null,
       summary: null,
       saveStatus: "idle",
@@ -313,6 +340,19 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
     }));
   }, [applyState]);
 
+  const togglePause = useCallback(() => {
+    applyState((previous) => {
+      if (previous.phase !== "playing") {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        manualPaused: !previous.manualPaused,
+      };
+    });
+  }, [applyState]);
+
   const endGame = useCallback(() => {
     applyState((previous) => completeRound(previous, "manual"));
   }, [applyState]);
@@ -336,6 +376,10 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
               wrongPauseMs,
               wrongFeedback: wrongPauseMs === 0 ? null : previous.wrongFeedback,
             };
+          }
+
+          if (previous.manualPaused) {
+            return previous;
           }
 
           let next: GameState = {
@@ -374,10 +418,11 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           const wrong = previous.wrong;
           const missed = previous.missed;
           const accuracy = computeAccuracy(correct, wrong, missed);
+          const scoreDelta = computeScoreDelta(streak);
 
           return {
             ...previous,
-            score: previous.score + 1,
+            score: previous.score + scoreDelta,
             correct,
             streak,
             bestStreak,
@@ -501,9 +546,10 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
       returnToMenu,
       setSelectedType,
       clearWrongFeedback,
+      togglePause,
       endGame,
     }),
-    [clearWrongFeedback, endGame, returnToMenu, selectMode, setSelectedType, startGame],
+    [clearWrongFeedback, endGame, returnToMenu, selectMode, setSelectedType, startGame, togglePause],
   );
 
   return {

@@ -29,10 +29,12 @@ export interface GameStateSnapshot {
   mode: GameModeId;
   selectedType: WasteTypeId;
   score: number;
+  correct: number;
   lives: number | null;
   timerMs: number | null;
   durationMs: number;
   wrongPauseMs: number;
+  manualPaused: boolean;
   summary: GameSummary | null;
 }
 
@@ -192,7 +194,7 @@ export class GameEngine {
     this.spawnedWasteCount = 0;
 
     this.difficultyManager.setMode(snapshot.mode);
-    this.currentDifficulty = this.difficultyManager.getCurrent(snapshot.durationMs, snapshot.score);
+    this.currentDifficulty = this.difficultyManager.getCurrent(snapshot.durationMs, snapshot.correct);
 
     this.clearWastes();
 
@@ -307,8 +309,6 @@ export class GameEngine {
   }
 
   private update(deltaMs: number): void {
-    this.updateParallax(deltaMs);
-
     const stateSnapshot = this.bridge.getState();
     this.syncToState(stateSnapshot);
 
@@ -322,8 +322,16 @@ export class GameEngine {
       return;
     }
 
+    if (tickedState.manualPaused) {
+      this.spawnSystem.setPaused(true);
+      this.collector.setMoveDirection(0);
+      return;
+    }
+
+    this.updateParallax(deltaMs);
+
     this.difficultyManager.setMode(tickedState.mode);
-    this.currentDifficulty = this.difficultyManager.getCurrent(tickedState.durationMs, tickedState.score);
+    this.currentDifficulty = this.difficultyManager.getCurrent(tickedState.durationMs, tickedState.correct);
 
     this.collector.applySelectedType(tickedState.selectedType);
 

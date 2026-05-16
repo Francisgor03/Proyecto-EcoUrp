@@ -4,7 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { gsap } from "gsap";
+import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { useAuth } from "@/components/auth/AuthProvider";
 import GameUI from "@/components/game/GameUI";
 import GameOverModal from "@/components/game/GameOverModal";
@@ -20,51 +20,16 @@ interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 function AnimatedButton({ children, className = "", ...props }: AnimatedButtonProps) {
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    const element = buttonRef.current;
-    if (!element) {
-      return;
-    }
-
-    const handleEnter = () => {
-      gsap.to(element, { scale: 1.05, y: -2, duration: 0.16, ease: "power2.out" });
-    };
-
-    const handleLeave = () => {
-      gsap.to(element, { scale: 1, y: 0, duration: 0.18, ease: "power2.out" });
-    };
-
-    const handleDown = () => {
-      gsap.to(element, { scale: 0.94, duration: 0.1, ease: "power2.out" });
-    };
-
-    const handleUp = () => {
-      gsap.to(element, { scale: 1.02, duration: 0.15, ease: "power2.out" });
-    };
-
-    element.addEventListener("mouseenter", handleEnter);
-    element.addEventListener("mouseleave", handleLeave);
-    element.addEventListener("mousedown", handleDown);
-    element.addEventListener("mouseup", handleUp);
-    element.addEventListener("focus", handleEnter);
-    element.addEventListener("blur", handleLeave);
-
-    return () => {
-      element.removeEventListener("mouseenter", handleEnter);
-      element.removeEventListener("mouseleave", handleLeave);
-      element.removeEventListener("mousedown", handleDown);
-      element.removeEventListener("mouseup", handleUp);
-      element.removeEventListener("focus", handleEnter);
-      element.removeEventListener("blur", handleLeave);
-    };
-  }, []);
-
   return (
-    <button ref={buttonRef} className={className} {...props}>
+    <motion.button
+      className={className}
+      whileHover={{ scale: 1.05, y: -2 }}
+      whileTap={{ scale: 0.94 }}
+      transition={{ type: "spring", stiffness: 520, damping: 32 }}
+      {...props}
+    >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
@@ -75,7 +40,7 @@ export default function GamePage() {
   const { state, actions, bridge } = useGameState("normal");
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const menuOverlayRef = useRef<HTMLDivElement | null>(null);
+  const viewportControls = useAnimationControls();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = useCallback(async () => {
@@ -111,28 +76,13 @@ export default function GamePage() {
   }, [isConfigured, loading, router, session]);
 
   useEffect(() => {
-    if (!viewportRef.current) {
-      return;
-    }
-
-    gsap.fromTo(
-      viewportRef.current,
-      { autoAlpha: 0, y: 18 },
-      { autoAlpha: 1, y: 0, duration: 0.46, ease: "power3.out" },
-    );
-  }, [state.phase]);
-
-  useEffect(() => {
-    if (!menuOverlayRef.current || state.phase !== "menu") {
-      return;
-    }
-
-    gsap.fromTo(
-      menuOverlayRef.current,
-      { autoAlpha: 0, y: 24 },
-      { autoAlpha: 1, y: 0, duration: 0.44, ease: "power3.out" },
-    );
-  }, [state.phase, state.mode]);
+    viewportControls.set({ opacity: 0, y: 18 });
+    void viewportControls.start({
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.46, ease: "easeOut" },
+    });
+  }, [state.phase, viewportControls]);
 
   if (!isConfigured) {
     return (
@@ -198,7 +148,12 @@ export default function GamePage() {
           </div>
         </div>
 
-        <div ref={viewportRef} className={`relative ${isFullscreen ? "flex flex-col bg-gradient-to-b from-eco-emerald-900 to-eco-emerald-950" : ""}`}>
+        <motion.div
+          ref={viewportRef}
+          className={`relative ${isFullscreen ? "flex flex-col bg-gradient-to-b from-eco-emerald-900 to-eco-emerald-950" : ""}`}
+          initial={{ opacity: 0, y: 18 }}
+          animate={viewportControls}
+        >
           <GameCanvas state={state} bridge={bridge} isFullscreen={isFullscreen} />
 
           {isFullscreen && (
@@ -222,6 +177,7 @@ export default function GamePage() {
                   state={state}
                   onSelectType={actions.setSelectedType}
                   onDismissFeedback={actions.clearWrongFeedback}
+                  onTogglePause={actions.togglePause}
                   layout="overlay"
                 />
               </div>
@@ -230,6 +186,7 @@ export default function GamePage() {
                   state={state}
                   onSelectType={actions.setSelectedType}
                   onDismissFeedback={actions.clearWrongFeedback}
+                  onTogglePause={actions.togglePause}
                   layout="stacked"
                 />
               </div>
@@ -251,62 +208,68 @@ export default function GamePage() {
             </>
           ) : null}
 
-          {state.phase === "menu" ? (
-            <div
-              ref={menuOverlayRef}
-              className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto overscroll-contain p-3 sm:items-center sm:p-8"
-            >
-              <div className="w-full max-w-3xl max-h-[82dvh] overflow-y-auto rounded-3xl border border-border bg-card/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-md sm:max-h-none sm:overflow-visible sm:p-8">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Selecciona modo</p>
-                <h2 className="mt-2 text-2xl font-black text-foreground sm:text-3xl">Atrapa y clasifica residuos</h2>
-                <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
-                  Controles: mover con flechas o A/D, cambiar tipo con teclas 1-4 o botones en pantalla.
-                  En mobile, arrastra horizontalmente para mover el tacho.
-                </p>
+          <AnimatePresence>
+            {state.phase === "menu" ? (
+              <motion.div
+                key={`menu-${state.mode}`}
+                className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto overscroll-contain p-3 sm:items-center sm:p-8"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
+                transition={{ duration: 0.44, ease: "easeOut" }}
+              >
+                <div className="w-full max-w-3xl max-h-[82dvh] overflow-y-auto rounded-3xl border border-border bg-card/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-md sm:max-h-none sm:overflow-visible sm:p-8">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Selecciona modo</p>
+                  <h2 className="mt-2 text-2xl font-black text-foreground sm:text-3xl">Atrapa y clasifica residuos</h2>
+                  <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+                    Controles: mover con flechas o A/D, cambiar tipo con teclas 1-4 o botones en pantalla.
+                    En mobile, arrastra horizontalmente para mover el tacho.
+                  </p>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {GAME_MODES.map((mode) => {
-                    const selected = mode.id === state.mode;
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {GAME_MODES.map((mode) => {
+                      const selected = mode.id === state.mode;
 
-                    return (
-                      <AnimatedButton
-                        key={mode.id}
-                        type="button"
-                        onClick={() => handleModeSelect(mode.id)}
-                        className={`rounded-2xl border p-3 text-left shadow-md sm:p-4 ${
-                          selected
-                            ? "border-primary bg-accent"
-                            : "border-border bg-card"
-                        }`}
-                      >
-                        <p className="text-xs font-bold uppercase tracking-widest text-primary">{mode.label}</p>
-                        <p className="mt-2 text-xs text-muted-foreground sm:text-sm">{mode.description}</p>
-                        <p className="mt-3 text-xs font-semibold text-muted-foreground">
-                          Spawn: {mode.spawnMs}ms | Velocidad: {mode.fallSpeed}
-                        </p>
-                      </AnimatedButton>
-                    );
-                  })}
+                      return (
+                        <AnimatedButton
+                          key={mode.id}
+                          type="button"
+                          onClick={() => handleModeSelect(mode.id)}
+                          className={`rounded-2xl border p-3 text-left shadow-md sm:p-4 ${
+                            selected
+                              ? "border-primary bg-accent"
+                              : "border-border bg-card"
+                          }`}
+                        >
+                          <p className="text-xs font-bold uppercase tracking-widest text-primary">{mode.label}</p>
+                          <p className="mt-2 text-xs text-muted-foreground sm:text-sm">{mode.description}</p>
+                          <p className="mt-3 text-xs font-semibold text-muted-foreground">
+                            Spawn: {mode.spawnMs}ms | Velocidad: {mode.fallSpeed}
+                          </p>
+                        </AnimatedButton>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <AnimatedButton
+                      type="button"
+                      onClick={() => actions.startGame(state.mode)}
+                      className="w-full rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md sm:py-3"
+                    >
+                      Iniciar partida
+                    </AnimatedButton>
+                    <Link
+                      href="/ranking"
+                      className="inline-flex w-full items-center justify-center rounded-2xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground sm:py-3"
+                    >
+                      Ver ranking
+                    </Link>
+                  </div>
                 </div>
-
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <AnimatedButton
-                    type="button"
-                    onClick={() => actions.startGame(state.mode)}
-                    className="w-full rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md sm:py-3"
-                  >
-                    Iniciar partida
-                  </AnimatedButton>
-                  <Link
-                    href="/ranking"
-                    className="inline-flex w-full items-center justify-center rounded-2xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground sm:py-3"
-                  >
-                    Ver ranking
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ) : null}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
           <GameOverModal
             open={state.phase === "game-over"}
@@ -316,7 +279,7 @@ export default function GamePage() {
             onReplay={() => actions.startGame(state.mode)}
             onBackToMenu={actions.returnToMenu}
           />
-        </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { ACHIEVEMENTS } from "@/lib/achievementsCatalog";
 
 const EVENT_NAME = "ecourp:achievement-unlocked";
@@ -17,7 +17,6 @@ export default function AchievementToast() {
   const [queue, setQueue] = useState([]);
   const [current, setCurrent] = useState(null);
   const [visible, setVisible] = useState(false);
-  const cardRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -54,29 +53,19 @@ export default function AchievementToast() {
     return () => window.clearTimeout(timer);
   }, [visible, current]);
 
-  useEffect(() => {
-    const card = cardRef.current;
-    if (!card || !current) return;
-
-    if (visible) {
-      gsap.fromTo(
-        card,
-        { autoAlpha: 0, scale: 0, y: -20 },
-        { autoAlpha: 1, scale: 1, y: 0, duration: 0.7, ease: "bounce.out" }
-      );
-      return;
-    }
-
-    gsap.to(card, { autoAlpha: 0, scale: 0.94, y: -8, duration: 0.16, ease: "power2.in" });
-  }, [visible, current]);
-
   if (!current) return null;
 
   return (
     <div className={`fixed right-4 top-16 z-50 w-[min(92vw,380px)] ${visible ? "" : "pointer-events-none"}`}>
-      <div
-        ref={cardRef}
+      <motion.div
+        key={current.id}
         className="flex items-start gap-3 rounded-2xl border border-border bg-card/95 px-4 py-3 shadow-lg shadow-black/10 backdrop-blur"
+        initial={{ opacity: 0, scale: 0, y: -20 }}
+        animate={
+          visible
+            ? { opacity: 1, scale: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" } }
+            : { opacity: 0, scale: 0.94, y: -8, transition: { duration: 0.16, ease: "easeIn" } }
+        }
       >
         <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-surface-raised text-xs font-bold text-foreground">
           {current.iconText || "LOGO"}
@@ -96,7 +85,7 @@ export default function AchievementToast() {
         >
           ×
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 }
