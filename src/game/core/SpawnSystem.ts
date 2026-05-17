@@ -1,10 +1,8 @@
-import { WASTE_IDS, type WasteTypeId } from "@/game/config/wasteTypes";
-
 export interface SpawnSystemConfig {
   minX: number;
   maxX: number;
   getCurrentSpawnMs: () => number;
-  onSpawn: (type: WasteTypeId, x: number) => void;
+  onSpawn: (x: number) => void;
 }
 
 function randomInt(min: number, max: number): number {
@@ -18,7 +16,7 @@ export class SpawnSystem {
   private spawnMinX: number;
   private spawnMaxX: number;
   private readonly getCurrentSpawnMs: () => number;
-  private readonly onSpawn: (type: WasteTypeId, x: number) => void;
+  private readonly onSpawn: (x: number) => void;
 
   private cooldownMs = 0;
   private paused = false;
@@ -69,9 +67,8 @@ export class SpawnSystem {
   }
 
   private spawnOnce(): void {
-    const type = WASTE_IDS[randomInt(0, WASTE_IDS.length - 1)];
     const x = randomInt(this.spawnMinX, this.spawnMaxX);
 
-    this.onSpawn(type, x);
+    this.onSpawn(x);
   }
 }

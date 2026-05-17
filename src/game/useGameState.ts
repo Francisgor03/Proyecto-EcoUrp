@@ -11,6 +11,11 @@ import {
   type WasteTypeId,
   type WrongBinFeedback,
 } from "@/game/config/wasteTypes";
+import {
+  getPowerUpDefinition,
+  type PowerUpId,
+  type PowerUpStatus,
+} from "@/game/config/powerUps";
 import type {
   GameOverReason,
   GameStateBridge,
@@ -103,6 +108,84 @@ function computeScoreDelta(nextStreak: number): number {
   return BASE_SCORE_PER_CATCH * getStreakMultiplier(nextStreak);
 }
 
+function buildPowerUpStatus(id: PowerUpId): PowerUpStatus {
+  const definition = getPowerUpDefinition(id);
+
+  return {
+    id,
+    remainingMs: definition.durationMs,
+    durationMs: definition.durationMs,
+  };
+}
+
+function activatePowerUp(powerUps: PowerUpStatus[], id: PowerUpId): PowerUpStatus[] {
+  const existingIndex = powerUps.findIndex((powerUp) => powerUp.id === id);
+  const definition = getPowerUpDefinition(id);
+
+  if (definition.durationMs === null && existingIndex !== -1) {
+    return powerUps;
+  }
+
+  const nextStatus = buildPowerUpStatus(id);
+
+  if (existingIndex === -1) {
+    return [...powerUps, nextStatus];
+  }
+
+  const nextPowerUps = powerUps.slice();
+  nextPowerUps[existingIndex] = nextStatus;
+  return nextPowerUps;
+}
+
+function tickPowerUps(powerUps: PowerUpStatus[], deltaMs: number): PowerUpStatus[] {
+  if (powerUps.length === 0) {
+    return powerUps;
+  }
+
+  let changed = false;
+  const nextPowerUps: PowerUpStatus[] = [];
+
+  for (const powerUp of powerUps) {
+    if (powerUp.remainingMs === null || powerUp.durationMs === null) {
+      nextPowerUps.push(powerUp);
+      continue;
+    }
+
+    const remainingMs = Math.max(0, powerUp.remainingMs - deltaMs);
+    if (remainingMs <= 0) {
+      changed = true;
+      continue;
+    }
+
+    if (remainingMs !== powerUp.remainingMs) {
+      changed = true;
+    }
+
+    nextPowerUps.push({
+      ...powerUp,
+      remainingMs,
+    });
+  }
+
+  return changed ? nextPowerUps : powerUps;
+}
+
+function consumeShield(powerUps: PowerUpStatus[]): { powerUps: PowerUpStatus[]; consumed: boolean } {
+  const shieldIndex = powerUps.findIndex((powerUp) => powerUp.id === "shield");
+
+  if (shieldIndex === -1) {
+    return {
+      powerUps,
+      consumed: false,
+    };
+  }
+
+  return {
+    powerUps: powerUps.filter((_, index) => index !== shieldIndex),
+    consumed: true,
+  };
+}
+
 function createInitialState(mode: GameModeId = "normal"): GameState {
   return {
     phase: "menu",
@@ -115,6 +198,7 @@ function createInitialState(mode: GameModeId = "normal"): GameState {
     durationMs: 0,
     wrongPauseMs: 0,
     manualPaused: false,
+    powerUps: [],
     correct: 0,
     wrong: 0,
     missed: 0,
@@ -293,6 +377,7 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           durationMs: 0,
           wrongPauseMs: 0,
           manualPaused: false,
+          powerUps: [],
           correct: 0,
           wrong: 0,
           missed: 0,
@@ -315,6 +400,7 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
       phase: "menu",
       wrongPauseMs: 0,
       manualPaused: false,
+      powerUps: [],
       wrongFeedback: null,
       summary: null,
       saveStatus: "idle",
@@ -385,6 +471,7 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           let next: GameState = {
             ...previous,
             durationMs: previous.durationMs + safeDelta,
+            powerUps: tickPowerUps(previous.powerUps, safeDelta),
           };
 
           if (next.timerMs !== null) {
@@ -442,17 +529,25 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           const missed = previous.missed;
           const accuracy = computeAccuracy(correct, wrong, missed);
 
+          const shieldState = consumeShield(previous.powerUps);
+          const shieldConsumed = shieldState.consumed;
+
           const hasFiniteLives = previous.lives !== null;
-          const nextLives = hasFiniteLives ? Math.max(0, (previous.lives ?? 0) - 1) : null;
+          const nextLives = hasFiniteLives
+            ? shieldConsumed
+              ? previous.lives
+              : Math.max(0, (previous.lives ?? 0) - 1)
+            : null;
 
           const nextState: GameState = {
             ...previous,
             wrong,
-            streak: 0,
+            streak: shieldConsumed ? previous.streak : 0,
             lives: nextLives,
             accuracy,
-            wrongPauseMs: WRONG_FEEDBACK_PAUSE_MS,
-            wrongFeedback: feedback,
+            wrongPauseMs: shieldConsumed ? 0 : WRONG_FEEDBACK_PAUSE_MS,
+            wrongFeedback: shieldConsumed ? null : feedback,
+            powerUps: shieldState.powerUps,
           };
 
           if (hasFiniteLives && (nextLives ?? 0) <= 0) {
@@ -472,15 +567,23 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           const wrong = previous.wrong;
           const accuracy = computeAccuracy(correct, wrong, missed);
 
+          const shieldState = consumeShield(previous.powerUps);
+          const shieldConsumed = shieldState.consumed;
+
           const hasFiniteLives = previous.lives !== null;
-          const nextLives = hasFiniteLives ? Math.max(0, (previous.lives ?? 0) - 1) : null;
+          const nextLives = hasFiniteLives
+            ? shieldConsumed
+              ? previous.lives
+              : Math.max(0, (previous.lives ?? 0) - 1)
+            : null;
 
           const nextState: GameState = {
             ...previous,
             missed,
-            streak: 0,
+            streak: shieldConsumed ? previous.streak : 0,
             lives: nextLives,
             accuracy,
+            powerUps: shieldState.powerUps,
           };
 
           if (hasFiniteLives && (nextLives ?? 0) <= 0) {
@@ -488,6 +591,22 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           }
 
           return nextState;
+        }),
+      onPowerUpCollected: (id) =>
+        applyState((previous) => {
+          if (previous.phase !== "playing") {
+            return previous;
+          }
+
+          const nextPowerUps = activatePowerUp(previous.powerUps, id);
+          if (nextPowerUps === previous.powerUps) {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            powerUps: nextPowerUps,
+          };
         }),
       onForceGameOver: (reason) => applyState((previous) => completeRound(previous, reason)),
     }),

@@ -1,4 +1,5 @@
 import { Collector } from "@/game/entities/Collector";
+import { PowerUp } from "@/game/entities/PowerUp";
 import { Waste } from "@/game/entities/Waste";
 
 /**
@@ -14,7 +15,20 @@ export class CollisionSystem {
     return distanceSquared <= radius * radius;
   }
 
+  public static isCollectorTouchingPowerUp(collector: Collector, powerUp: PowerUp): boolean {
+    const dx = collector.x - powerUp.x;
+    const dy = collector.y - powerUp.y;
+    const distanceSquared = dx * dx + dy * dy;
+    const radius = collector.getCollisionRadius() + powerUp.getCollisionRadius();
+
+    return distanceSquared <= radius * radius;
+  }
+
   public static isWasteOutOfBounds(waste: Waste, floorY: number): boolean {
     return waste.y - waste.getCollisionRadius() > floorY;
+  }
+
+  public static isPowerUpOutOfBounds(powerUp: PowerUp, floorY: number): boolean {
+    return powerUp.y - powerUp.getCollisionRadius() > floorY;
   }
 }

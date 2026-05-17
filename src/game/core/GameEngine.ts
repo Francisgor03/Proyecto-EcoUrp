@@ -1,9 +1,18 @@
 import { Application, Container, Sprite } from "pixi.js";
-import { buildWrongBinFeedback, type WasteTypeId } from "@/game/config/wasteTypes";
+import { buildWrongBinFeedback, WASTE_IDS, type WasteTypeId } from "@/game/config/wasteTypes";
+import {
+  POWER_UP_DROP_CHANCE,
+  POWER_UP_IDS,
+  POWER_UP_SLOW_MULTIPLIER,
+  POWER_UP_SPEED_MULTIPLIER,
+  type PowerUpId,
+  type PowerUpStatus,
+} from "@/game/config/powerUps";
 import { DifficultyManager, type DifficultySnapshot } from "@/game/core/DifficultyManager";
 import { CollisionSystem } from "@/game/core/CollisionSystem";
 import { SpawnSystem } from "@/game/core/SpawnSystem";
 import { Collector } from "@/game/entities/Collector";
+import { PowerUp } from "@/game/entities/PowerUp";
 import { Waste } from "@/game/entities/Waste";
 import { ParticleEffect } from "@/game/entities/ParticleEffect";
 import type { LoadedGameAssets } from "@/game/utils/assetLoader";
@@ -35,6 +44,7 @@ export interface GameStateSnapshot {
   durationMs: number;
   wrongPauseMs: number;
   manualPaused: boolean;
+  powerUps: PowerUpStatus[];
   summary: GameSummary | null;
 }
 
@@ -45,6 +55,7 @@ export interface GameStateBridge {
   onCorrectCatch: () => GameStateSnapshot;
   onWrongCatch: (feedback: ReturnType<typeof buildWrongBinFeedback>) => GameStateSnapshot;
   onMissedWaste: () => GameStateSnapshot;
+  onPowerUpCollected: (id: PowerUpId) => GameStateSnapshot;
   onForceGameOver: (reason: GameOverReason) => GameStateSnapshot;
 }
 
@@ -85,6 +96,7 @@ export class GameEngine {
   private readonly errorIcon: Sprite;
 
   private readonly wastes: Waste[] = [];
+  private readonly powerUps: PowerUp[] = [];
 
   private readonly difficultyManager: DifficultyManager;
   private currentDifficulty: DifficultySnapshot;
@@ -92,7 +104,7 @@ export class GameEngine {
   private shouldPauseAfterError = false;
 
   private isRoundRunning = false;
-  private spawnedWasteCount = 0;
+  private spawnedItemCount = 0;
 
   private width: number;
   private height: number;
@@ -163,7 +175,7 @@ export class GameEngine {
       minX: playBounds.minX,
       maxX: playBounds.maxX,
       getCurrentSpawnMs: () => this.currentDifficulty.spawnMs,
-      onSpawn: (type, x) => this.spawnWaste(type, x),
+      onSpawn: (x) => this.spawnItem(x),
     });
 
     this.keyDownHandler = (event) => this.handleKeyDown(event);
@@ -191,17 +203,19 @@ export class GameEngine {
     const snapshot = this.bridge.getState();
 
     this.isRoundRunning = true;
-    this.spawnedWasteCount = 0;
+    this.spawnedItemCount = 0;
 
     this.difficultyManager.setMode(snapshot.mode);
     this.currentDifficulty = this.difficultyManager.getCurrent(snapshot.durationMs, snapshot.correct);
 
     this.clearWastes();
+    this.clearPowerUps();
 
     this.collector.x = this.width / 2;
     this.collector.y = this.getCollectorY();
     this.collector.setMoveDirection(0);
     this.collector.applySelectedType(snapshot.selectedType);
+    this.collector.setSpeedMultiplier(1);
 
     this.spawnSystem.setPaused(false);
     this.spawnSystem.reset();
@@ -225,6 +239,7 @@ export class GameEngine {
     this.touchDirectionMs = 0;
 
     this.clearWastes();
+    this.clearPowerUps();
   }
 
   public resize(width: number, height: number): void {
@@ -255,6 +270,7 @@ export class GameEngine {
     this.app.canvas.removeEventListener("pointerleave", this.pointerUpHandler);
 
     this.clearWastes();
+    this.clearPowerUps();
     this.particleEffect.destroy();
 
     this.root.destroy({ children: true });
@@ -334,6 +350,7 @@ export class GameEngine {
     this.currentDifficulty = this.difficultyManager.getCurrent(tickedState.durationMs, tickedState.correct);
 
     this.collector.applySelectedType(tickedState.selectedType);
+    this.applyPowerUpEffects(tickedState);
 
     if (tickedState.wrongPauseMs > 0) {
       this.spawnSystem.setPaused(true);
@@ -353,10 +370,11 @@ export class GameEngine {
     this.collector.update(deltaMs);
 
     this.spawnSystem.update(deltaMs);
+    const fallSpeed = this.resolveFallSpeed(tickedState);
 
     for (let index = this.wastes.length - 1; index >= 0; index -= 1) {
       const waste = this.wastes[index];
-      waste.setFallSpeed(this.currentDifficulty.fallSpeed);
+      waste.setFallSpeed(fallSpeed);
       waste.update(deltaMs);
 
       if (CollisionSystem.isCollectorTouchingWaste(this.collector, waste)) {
@@ -388,6 +406,30 @@ export class GameEngine {
       }
     }
 
+    for (let index = this.powerUps.length - 1; index >= 0; index -= 1) {
+      const powerUp = this.powerUps[index];
+      powerUp.setFallSpeed(fallSpeed);
+      powerUp.update(deltaMs);
+
+      if (CollisionSystem.isCollectorTouchingPowerUp(this.collector, powerUp)) {
+        this.resolvePowerUpCollision(index, powerUp);
+
+        if (!this.isRoundRunning) {
+          return;
+        }
+
+        continue;
+      }
+
+      if (CollisionSystem.isPowerUpOutOfBounds(powerUp, this.height + 20)) {
+        this.resolveMissedPowerUp(index, powerUp);
+
+        if (!this.isRoundRunning) {
+          return;
+        }
+      }
+    }
+
     this.particleEffect.update(deltaMs);
     this.updateScreenShake(deltaMs);
     this.updateErrorIcon(deltaMs);
@@ -412,10 +454,24 @@ export class GameEngine {
     }
 
     const feedback = buildWrongBinFeedback(wasteType, selectedType);
-    this.triggerErrorFeedback();
-    this.shouldPauseAfterError = true;
-
     const nextState = this.bridge.onWrongCatch(feedback);
+    if (nextState.phase !== "playing") {
+      this.stopRound();
+      return;
+    }
+
+    const shouldPause = nextState.wrongPauseMs > 0;
+    if (shouldPause) {
+      this.triggerErrorFeedback();
+    }
+
+    this.shouldPauseAfterError = shouldPause;
+  }
+
+  private resolvePowerUpCollision(index: number, powerUp: PowerUp): void {
+    this.removePowerUpAt(index);
+
+    const nextState = this.bridge.onPowerUpCollected(powerUp.type);
     if (nextState.phase !== "playing") {
       this.stopRound();
     }
@@ -430,6 +486,10 @@ export class GameEngine {
     }
   }
 
+  private resolveMissedPowerUp(index: number, _powerUp: PowerUp): void {
+    this.removePowerUpAt(index);
+  }
+
   private removeWasteAt(index: number): void {
     const waste = this.wastes[index];
     if (!waste) {
@@ -438,6 +498,16 @@ export class GameEngine {
 
     this.wastes.splice(index, 1);
     waste.destroy({ children: true });
+  }
+
+  private removePowerUpAt(index: number): void {
+    const powerUp = this.powerUps[index];
+    if (!powerUp) {
+      return;
+    }
+
+    this.powerUps.splice(index, 1);
+    powerUp.destroy({ children: true });
   }
 
   private getCollectorY(): number {
@@ -478,13 +548,31 @@ export class GameEngine {
     }
   }
 
+  private clearPowerUps(): void {
+    while (this.powerUps.length) {
+      const powerUp = this.powerUps.pop();
+      powerUp?.destroy({ children: true });
+    }
+  }
+
+  private spawnItem(x: number): void {
+    const shouldSpawnPowerUp = Math.random() < POWER_UP_DROP_CHANCE;
+
+    if (shouldSpawnPowerUp) {
+      this.spawnPowerUp(this.pickRandomPowerUpType(), x);
+      return;
+    }
+
+    this.spawnWaste(this.pickRandomWasteType(), x);
+  }
+
   private spawnWaste(type: WasteTypeId, x: number): void {
     if (!this.isRoundRunning) {
       return;
     }
 
     const waste = new Waste({
-      id: `w-${this.spawnedWasteCount}`,
+      id: `w-${this.spawnedItemCount}`,
       type,
       textures: this.assets.wastes[type],
       x,
@@ -492,10 +580,38 @@ export class GameEngine {
       fallSpeed: this.currentDifficulty.fallSpeed,
     });
 
-    this.spawnedWasteCount += 1;
+    this.spawnedItemCount += 1;
 
     this.wastes.push(waste);
     this.worldRoot.addChild(waste);
+  }
+
+  private spawnPowerUp(type: PowerUpId, x: number): void {
+    if (!this.isRoundRunning) {
+      return;
+    }
+
+    const powerUp = new PowerUp({
+      id: `p-${this.spawnedItemCount}`,
+      type,
+      textures: this.assets.powerUps[type],
+      x,
+      y: -80,
+      fallSpeed: this.currentDifficulty.fallSpeed,
+    });
+
+    this.spawnedItemCount += 1;
+
+    this.powerUps.push(powerUp);
+    this.worldRoot.addChild(powerUp);
+  }
+
+  private pickRandomWasteType(): WasteTypeId {
+    return WASTE_IDS[Math.floor(Math.random() * WASTE_IDS.length)];
+  }
+
+  private pickRandomPowerUpType(): PowerUpId {
+    return POWER_UP_IDS[Math.floor(Math.random() * POWER_UP_IDS.length)];
   }
 
   private updateParallax(deltaMs: number): void {
@@ -600,6 +716,27 @@ export class GameEngine {
       default:
         return "#ffffff";
     }
+  }
+
+  private applyPowerUpEffects(snapshot: GameStateSnapshot): void {
+    const speedMultiplier = this.resolveCollectorSpeedMultiplier(snapshot);
+    this.collector.setSpeedMultiplier(speedMultiplier);
+  }
+
+  private resolveFallSpeed(snapshot: GameStateSnapshot): number {
+    const slowActive = this.isPowerUpActive(snapshot.powerUps, "hourglass");
+    const multiplier = slowActive ? POWER_UP_SLOW_MULTIPLIER : 1;
+    return this.currentDifficulty.fallSpeed * multiplier;
+  }
+
+  private resolveCollectorSpeedMultiplier(snapshot: GameStateSnapshot): number {
+    return this.isPowerUpActive(snapshot.powerUps, "lightning")
+      ? POWER_UP_SPEED_MULTIPLIER
+      : 1;
+  }
+
+  private isPowerUpActive(powerUps: PowerUpStatus[], id: PowerUpId): boolean {
+    return powerUps.some((powerUp) => powerUp.id === id);
   }
 
   private syncToState(snapshot: GameStateSnapshot): void {

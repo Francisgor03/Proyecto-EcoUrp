@@ -8,6 +8,7 @@ import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { useAuth } from "@/components/auth/AuthProvider";
 import GameUI from "@/components/game/GameUI";
 import GameOverModal from "@/components/game/GameOverModal";
+import PowerUpHUD from "@/components/game/PowerUpHUD";
 import { GAME_MODES, type GameModeId } from "@/game/config/gameModes";
 import { useGameState } from "@/game/useGameState";
 
@@ -172,6 +173,7 @@ export default function GamePage() {
 
           {state.phase === "playing" ? (
             <>
+              <PowerUpHUD powerUps={state.powerUps} />
               <div className="hidden sm:block">
                 <GameUI
                   state={state}

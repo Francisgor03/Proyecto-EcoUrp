@@ -24,11 +24,12 @@ export class Collector extends Container {
   private readonly sprite: Sprite;
   private readonly textures: Record<WasteTypeId, Texture>;
   private baseScale: number;
+  private baseMoveSpeed: number;
+  private speedMultiplier = 1;
 
   private moveDirection = 0;
   private minX: number;
   private maxX: number;
-  private readonly moveSpeed: number;
   private selectedType: WasteTypeId;
 
   public constructor(options: CollectorOptions) {
@@ -36,7 +37,7 @@ export class Collector extends Container {
 
     this.minX = options.minX;
     this.maxX = options.maxX;
-    this.moveSpeed = options.moveSpeed;
+    this.baseMoveSpeed = options.moveSpeed;
     this.selectedType = options.selectedType;
     this.textures = options.textures;
     this.baseScale = options.baseScale ?? 1;
@@ -62,6 +63,10 @@ export class Collector extends Container {
     this.moveDirection = clamp(direction, -1, 1);
   }
 
+  public setSpeedMultiplier(multiplier: number): void {
+    this.speedMultiplier = Math.max(0.2, multiplier);
+  }
+
   public setBaseScale(scale: number): void {
     this.baseScale = Math.max(0.1, scale);
     this.sprite.scale.set(this.baseScale);
@@ -76,7 +81,8 @@ export class Collector extends Container {
 
   public update(deltaMs: number): void {
     const previousX = this.x;
-    this.x = clamp(this.x + (this.moveDirection * this.moveSpeed * deltaMs) / 1000, this.minX, this.maxX);
+    const moveSpeed = this.baseMoveSpeed * this.speedMultiplier;
+    this.x = clamp(this.x + (this.moveDirection * moveSpeed * deltaMs) / 1000, this.minX, this.maxX);
 
     const velocityX = this.x - previousX;
     const moving = Math.abs(velocityX) > 0.001;

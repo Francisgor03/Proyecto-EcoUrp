@@ -20,6 +20,12 @@ import sprVidrioBotellaImage from "@/assets/sprites/spr_vidrio_botella.png";
 import sprVidrioFrascoImage from "@/assets/sprites/spr_vidrio_frasco.png";
 import sprVidrioTarroImage from "@/assets/sprites/spr_vidrio_tarro.png";
 import { WASTE_IDS, getWasteType, type WasteTypeId } from "@/game/config/wasteTypes";
+import {
+  POWER_UP_IDS,
+  getPowerUpDefinition,
+  type PowerUpDefinition,
+  type PowerUpId,
+} from "@/game/config/powerUps";
 
 const ASSET_KEYS = {
   backgroundFar: "game-bg-far",
@@ -28,6 +34,12 @@ const ASSET_KEYS = {
   errorIcon: "game-error-icon",
   particle: "game-particle-dot",
 } as const;
+
+const POWER_UP_ASSET_KEYS: Record<PowerUpId, string> = {
+  hourglass: "game-powerup-hourglass",
+  shield: "game-powerup-shield",
+  lightning: "game-powerup-lightning",
+};
 
 type AssetKey = (typeof ASSET_KEYS)[keyof typeof ASSET_KEYS];
 
@@ -41,6 +53,7 @@ export interface LoadedGameAssets {
   errorIcon: Texture;
   particle: Texture;
   wastes: Record<WasteTypeId, Texture[]>;
+  powerUps: Record<PowerUpId, Texture[]>;
 }
 
 const WASTE_SPRITE_SOURCES: Record<WasteTypeId, StaticImageData[]> = {
@@ -86,6 +99,22 @@ function createWasteSvg(fillHex: string, label: string): string {
         <circle cx="30" cy="30" r="8" fill="#ffffff" fill-opacity="0.28"/>
         <text x="48" y="56" text-anchor="middle" font-family="Trebuchet MS, Verdana, sans-serif" font-size="18" font-weight="700" fill="#0b1f17">${label}</text>
       </g>
+    </svg>
+  `);
+}
+
+function createPowerUpSvg(definition: PowerUpDefinition): string {
+  return svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24">
+      <defs>
+        <radialGradient id="p" cx="0.3" cy="0.3" r="0.9">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+          <stop offset="1" stop-color="#000000" stop-opacity="0.12"/>
+        </radialGradient>
+      </defs>
+      <circle cx="12" cy="12" r="10" fill="${definition.colorHex}" stroke="#ffffff" stroke-width="1.4"/>
+      <circle cx="12" cy="12" r="10" fill="url(#p)"/>
+      <path d="${definition.iconPath}" fill="#ffffff" stroke="#0f172a" stroke-width="0.4"/>
     </svg>
   `);
 }
@@ -178,12 +207,18 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
     registerAsset(ASSET_KEYS.errorIcon, createErrorIconSvg());
     registerAsset(ASSET_KEYS.particle, createParticleSvg());
 
+    for (const powerUpId of POWER_UP_IDS) {
+      const definition = getPowerUpDefinition(powerUpId);
+      registerAsset(POWER_UP_ASSET_KEYS[powerUpId], createPowerUpSvg(definition));
+    }
+
     await Assets.load([
       ASSET_KEYS.backgroundFar,
       ASSET_KEYS.backgroundMid,
       ASSET_KEYS.backgroundNear,
       ASSET_KEYS.errorIcon,
       ASSET_KEYS.particle,
+      ...Object.values(POWER_UP_ASSET_KEYS),
     ]);
 
     const wasteTextures = {} as Record<WasteTypeId, Texture[]>;
@@ -207,6 +242,11 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
       collectorTextures[wasteId] = await loadCollectorTexture(wasteId, COLLECTOR_SPRITE_SOURCES[wasteId]);
     }
 
+    const powerUpTextures = {} as Record<PowerUpId, Texture[]>;
+    for (const powerUpId of POWER_UP_IDS) {
+      powerUpTextures[powerUpId] = [getTexture(POWER_UP_ASSET_KEYS[powerUpId])];
+    }
+
     return {
       backgrounds: {
         far: getTexture(ASSET_KEYS.backgroundFar),
@@ -217,6 +257,7 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
       errorIcon: getTexture(ASSET_KEYS.errorIcon),
       particle: getTexture(ASSET_KEYS.particle),
       wastes: wasteTextures,
+      powerUps: powerUpTextures,
     };
   })();
 
