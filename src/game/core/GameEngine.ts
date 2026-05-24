@@ -21,6 +21,11 @@ import type { GameModeId } from "@/game/config/gameModes";
 export type GamePhase = "menu" | "playing" | "game-over";
 export type GameOverReason = "time" | "lives" | "manual";
 
+export interface TutorialRuntime {
+  blockSpawns: boolean;
+  freezeTimer: boolean;
+}
+
 export interface GameSummary {
   mode: GameModeId;
   score: number;
@@ -46,6 +51,7 @@ export interface GameStateSnapshot {
   manualPaused: boolean;
   powerUps: PowerUpStatus[];
   summary: GameSummary | null;
+  tutorial: TutorialRuntime | null;
 }
 
 export interface GameStateBridge {
@@ -102,6 +108,7 @@ export class GameEngine {
   private currentDifficulty: DifficultySnapshot;
   private readonly spawnSystem: SpawnSystem;
   private shouldPauseAfterError = false;
+  private tutorialSpawnsBlocked = false;
 
   private isRoundRunning = false;
   private spawnedItemCount = 0;
@@ -201,6 +208,7 @@ export class GameEngine {
 
   public startRound(): void {
     const snapshot = this.bridge.getState();
+    const blockSpawns = snapshot.tutorial?.blockSpawns ?? false;
 
     this.isRoundRunning = true;
     this.spawnedItemCount = 0;
@@ -217,9 +225,11 @@ export class GameEngine {
     this.collector.applySelectedType(snapshot.selectedType);
     this.collector.setSpeedMultiplier(1);
 
-    this.spawnSystem.setPaused(false);
+    this.spawnSystem.setPaused(blockSpawns);
     this.spawnSystem.reset();
-    this.spawnSystem.forceSpawn();
+    if (!blockSpawns) {
+      this.spawnSystem.forceSpawn();
+    }
 
     this.shakeRemainingMs = 0;
     this.shakeMagnitude = 0;
@@ -338,6 +348,16 @@ export class GameEngine {
       return;
     }
 
+    const blockSpawns = tickedState.tutorial?.blockSpawns ?? false;
+    if (blockSpawns !== this.tutorialSpawnsBlocked) {
+      this.tutorialSpawnsBlocked = blockSpawns;
+      if (blockSpawns) {
+        this.clearWastes();
+        this.clearPowerUps();
+        this.spawnSystem.setPaused(true);
+      }
+    }
+
     if (tickedState.manualPaused) {
       this.spawnSystem.setPaused(true);
       this.collector.setMoveDirection(0);
@@ -362,14 +382,18 @@ export class GameEngine {
       return;
     }
 
-    this.spawnSystem.setPaused(false);
+    if (!blockSpawns) {
+      this.spawnSystem.setPaused(false);
+    }
     this.shouldPauseAfterError = false;
 
     const moveDirection = this.computeMoveDirection(deltaMs);
     this.collector.setMoveDirection(moveDirection);
     this.collector.update(deltaMs);
 
-    this.spawnSystem.update(deltaMs);
+    if (!blockSpawns) {
+      this.spawnSystem.update(deltaMs);
+    }
     const fallSpeed = this.resolveFallSpeed(tickedState);
 
     for (let index = this.wastes.length - 1; index >= 0; index -= 1) {
@@ -719,11 +743,20 @@ export class GameEngine {
   }
 
   private applyPowerUpEffects(snapshot: GameStateSnapshot): void {
+    if (snapshot.tutorial?.blockSpawns) {
+      this.collector.setSpeedMultiplier(1);
+      return;
+    }
+
     const speedMultiplier = this.resolveCollectorSpeedMultiplier(snapshot);
     this.collector.setSpeedMultiplier(speedMultiplier);
   }
 
   private resolveFallSpeed(snapshot: GameStateSnapshot): number {
+    if (snapshot.tutorial?.blockSpawns) {
+      return this.currentDifficulty.fallSpeed;
+    }
+
     const slowActive = this.isPowerUpActive(snapshot.powerUps, "hourglass");
     const multiplier = slowActive ? POWER_UP_SLOW_MULTIPLIER : 1;
     return this.currentDifficulty.fallSpeed * multiplier;

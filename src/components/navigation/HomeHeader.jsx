@@ -172,7 +172,7 @@ export default function HomeHeader() {
             E
           </span>
           <span className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-            EcoURP
+            Proyecto EcoURP
           </span>
         </Link>
 

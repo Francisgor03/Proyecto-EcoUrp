@@ -12,7 +12,7 @@
   --card: #ffffff;
   --primary: #10b981;
   --primary-foreground: #ffffff;
-  --muted-foreground: #64748b;
+  --muted-foreground: #2f3b4a;
   --accent: #d1fae5;
   --accent-foreground: #065f46;
   /* Elevación: borde sutil (evita sombras pesadas en dark) */
@@ -29,7 +29,7 @@ html[data-theme="dark"] {
   --card: #16211e;
   --primary: #10b981;
   --primary-foreground: #04120d;
-  --muted-foreground: #94a3b8;
+  --muted-foreground: #d3dce6;
   --accent: #065f46;
   --accent-foreground: #a7f3d0;
   --border: rgba(148, 163, 184, 0.14);

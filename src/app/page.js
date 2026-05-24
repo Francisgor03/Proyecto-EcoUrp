@@ -2,9 +2,9 @@ import Image from "next/image";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import { FaTiktok } from "react-icons/fa";
 import HomeCtas, { FooterAccessLink } from "@/components/home/HomeCtas";
+import SeparationSection from "@/components/home/SeparationSection";
 import heroImage from "@/assets/images/Hero.jpg";
 import datosImage from "@/assets/images/Datos.jpg";
-import tachosImage from "@/assets/images/Tachos.jpg";
 
 export const metadata = {
   title: "EcoURP | Inicio",
@@ -21,13 +21,13 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl">
             <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-10">
               <div className="mx-auto max-w-3xl text-center lg:mx-0 lg:text-left">
-                <p className="mb-3 inline-flex rounded-full border border-border bg-card/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary shadow-sm sm:mb-4 sm:px-4 sm:text-xs">
+                <p className="mb-3 inline-flex rounded-full border border-border bg-card/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary shadow-sm sm:mb-4 sm:px-4 sm:text-sm">
                   Educacion ambiental
                 </p>
                 <h1 className="text-balance text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl md:text-4xl lg:text-5xl">
                   Gamifica el reciclaje y convierte cada clase en una mision sostenible
                 </h1>
-                <p className="mt-4 text-pretty text-sm leading-relaxed text-muted-foreground sm:mt-6 sm:text-base lg:text-lg">
+                <p className="mt-4 text-pretty text-base leading-relaxed text-muted-foreground sm:mt-6 sm:text-lg lg:text-lg">
                   EcoURP empodera a la comunidad universitaria con retos, niveles y record para
                   transformar la cultura del reciclaje en una practica cotidiana y divertida con
                   impacto real en el campus y el pais.
@@ -60,7 +60,7 @@ export default function HomePage() {
               <h2 className="text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
                 ¿Por qué importa el reciclaje?
               </h2>
-              <p className="mt-3 text-sm text-pretty text-muted-foreground sm:mt-4 sm:text-base">
+              <p className="mt-3 text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
                 En el Peru se generan cerca de 21,000 toneladas de residuos al dia y solo se
                 valoriza el 2.72% de lo que podria reciclarse. Separar bien en el aula y el campus
                 reduce la presion sobre los rellenos sanitarios y permite que papel, plastico y
@@ -104,12 +104,12 @@ export default function HomePage() {
                   className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-sm ring-1 ring-border/60 sm:rounded-3xl sm:p-6"
                 >
                   <span
-                    className={`mb-3 inline-flex w-fit rounded-xl px-3 py-1 text-[11px] font-bold sm:mb-4 sm:rounded-2xl sm:text-xs ${card.accent}`}
+                    className={`mb-3 inline-flex w-fit rounded-xl px-3 py-1 text-[11px] font-bold sm:mb-4 sm:rounded-2xl sm:text-sm ${card.accent}`}
                   >
                     EcoURP
                   </span>
-                  <h3 className="text-base font-semibold text-foreground sm:text-lg">{card.title}</h3>
-                  <p className="mt-2 flex-1 text-xs leading-relaxed text-muted-foreground sm:mt-3 sm:text-sm">
+                  <h3 className="text-lg font-semibold text-foreground sm:text-xl">{card.title}</h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground sm:mt-3 sm:text-base">
                     {card.body}
                   </p>
                 </li>
@@ -118,70 +118,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section
-          id="separacion"
-          className="scroll-mt-20 border-t border-border bg-surface-raised/60 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16"
-        >
-          <div className="mx-auto max-w-6xl">
-            <div className="grid gap-6 lg:grid-cols-2 lg:items-center lg:gap-14">
-              <div className="rounded-2xl border border-border bg-gradient-to-br from-eco-emerald-100 to-eco-lime-100 p-6 shadow-inner sm:rounded-3xl sm:p-8 lg:p-10">
-                <h2 className="text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
-                  Separación en origen
-                </h2>
-                <p className="mt-3 text-sm text-muted-foreground sm:mt-4 sm:text-base">
-                  Separar en casa o en la universidad es el primer paso para que papel, vidrio,
-                  metal y plastico lleguen limpios a las plantas. Consulta siempre las normas del
-                  distrito: los colores del contenedor pueden variar y la confusion contamina el
-                  lote.
-                </p>
-              </div>
-              <div className="space-y-5 rounded-2xl border border-border bg-surface-raised/60 p-5 sm:space-y-6 sm:rounded-3xl sm:p-8 lg:p-10">
-                <div className="overflow-hidden rounded-xl border border-border bg-card/80 sm:rounded-2xl">
-                  <div className="relative aspect-[16/10] w-full">
-                    <Image
-                      src={tachosImage}
-                      alt="Tachos de reciclaje por colores en un punto de separacion"
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 520px"
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-eco-emerald-600/15" />
-                  </div>
-                </div>
-                <h3 className="text-base font-semibold text-foreground sm:text-lg">Tips rápidos</h3>
-                <ul className="space-y-3 text-sm text-muted-foreground sm:space-y-4">
-                  <li className="flex gap-3 rounded-xl bg-card/80 p-3 shadow-sm sm:rounded-2xl sm:p-4">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-eco-lime-300 text-xs font-bold text-eco-emerald-900 sm:h-8 sm:w-8 sm:text-sm">
-                      1
-                    </span>
-                    <span className="text-xs leading-relaxed sm:text-sm">
-                      El papel con restos de comida (como cajas de pizza) no se recicla: puede
-                      contaminar todo el lote. En tu juego va al tacho organico o general.
-                    </span>
-                  </li>
-                  <li className="flex gap-3 rounded-xl bg-card/80 p-3 shadow-sm sm:rounded-2xl sm:p-4">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-eco-lime-300 text-xs font-bold text-eco-emerald-900 sm:h-8 sm:w-8 sm:text-sm">
-                      2
-                    </span>
-                    <span className="text-xs leading-relaxed sm:text-sm">
-                      El vidrio es 100% reciclable y puede procesarse infinitas veces sin perder
-                      calidad, pero mezclarlo con plastico dificulta su limpieza.
-                    </span>
-                  </li>
-                  <li className="flex gap-3 rounded-xl bg-card/80 p-3 shadow-sm sm:rounded-2xl sm:p-4">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-eco-lime-300 text-xs font-bold text-eco-emerald-900 sm:h-8 sm:w-8 sm:text-sm">
-                      3
-                    </span>
-                    <span className="text-xs leading-relaxed sm:text-sm">
-                      Los plasticos en el tacho organico no se descomponen: terminan como
-                      microplasticos en el suelo. Separarlos bien evita esa contaminacion.
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
+        <SeparationSection />
       </main>
 
       <footer className="mt-auto border-t border-border bg-surface-raised/70 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">

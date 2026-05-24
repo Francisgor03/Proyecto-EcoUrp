@@ -21,6 +21,7 @@ import type {
   GameStateBridge,
   GameStateSnapshot,
   GameSummary,
+  TutorialRuntime,
 } from "@/game/core/GameEngine";
 import { supabase } from "@/lib/supabaseClient";
 import { saveTachoSession } from "@/lib/saveTachoSession";
@@ -58,6 +59,10 @@ export interface UseGameStateActions {
   setSelectedType: (type: WasteTypeId) => void;
   clearWrongFeedback: () => void;
   togglePause: () => void;
+  setManualPaused: (paused: boolean) => void;
+  setTutorialState: (tutorial: TutorialRuntime | null) => void;
+  setTutorialPowerUps: (powerUps: PowerUpStatus[]) => void;
+  setTutorialFeedback: (feedback: WrongBinFeedback | null) => void;
   endGame: () => void;
 }
 
@@ -209,6 +214,7 @@ function createInitialState(mode: GameModeId = "normal"): GameState {
     saveStatus: "idle",
     saveMessage: null,
     summary: null,
+    tutorial: null,
   };
 }
 
@@ -330,6 +336,7 @@ function completeRound(current: GameState, reason: GameOverReason): GameState {
     summary,
     saveStatus: "idle",
     saveMessage: null,
+    tutorial: null,
   };
 }
 
@@ -388,6 +395,7 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           saveStatus: "idle",
           saveMessage: null,
           summary: null,
+          tutorial: previous.tutorial,
         };
       });
     },
@@ -405,6 +413,7 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
       summary: null,
       saveStatus: "idle",
       saveMessage: null,
+      tutorial: null,
     }));
   }, [applyState]);
 
@@ -439,6 +448,80 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
     });
   }, [applyState]);
 
+  const setManualPaused = useCallback(
+    (paused: boolean) => {
+      applyState((previous) => {
+        if (previous.phase !== "playing") {
+          return previous;
+        }
+
+        if (previous.manualPaused === paused) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          manualPaused: paused,
+        };
+      });
+    },
+    [applyState],
+  );
+
+  const setTutorialState = useCallback(
+    (tutorial: TutorialRuntime | null) => {
+      applyState((previous) => {
+        const previousTutorial = previous.tutorial;
+        const sameTutorial =
+          (previousTutorial?.blockSpawns ?? false) === (tutorial?.blockSpawns ?? false) &&
+          (previousTutorial?.freezeTimer ?? false) === (tutorial?.freezeTimer ?? false);
+
+        if (sameTutorial) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          tutorial,
+        };
+      });
+    },
+    [applyState],
+  );
+
+  const setTutorialPowerUps = useCallback(
+    (powerUps: PowerUpStatus[]) => {
+      applyState((previous) => {
+        if (previous.powerUps === powerUps) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          powerUps,
+        };
+      });
+    },
+    [applyState],
+  );
+
+  const setTutorialFeedback = useCallback(
+    (feedback: WrongBinFeedback | null) => {
+      applyState((previous) => {
+        if (previous.wrongFeedback === feedback && previous.wrongPauseMs === 0) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          wrongFeedback: feedback,
+          wrongPauseMs: 0,
+        };
+      });
+    },
+    [applyState],
+  );
+
   const endGame = useCallback(() => {
     applyState((previous) => completeRound(previous, "manual"));
   }, [applyState]);
@@ -465,6 +548,10 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           }
 
           if (previous.manualPaused) {
+            return previous;
+          }
+
+          if (previous.tutorial?.freezeTimer) {
             return previous;
           }
 
@@ -666,9 +753,25 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
       setSelectedType,
       clearWrongFeedback,
       togglePause,
+      setManualPaused,
+      setTutorialState,
+      setTutorialPowerUps,
+      setTutorialFeedback,
       endGame,
     }),
-    [clearWrongFeedback, endGame, returnToMenu, selectMode, setSelectedType, startGame, togglePause],
+    [
+      clearWrongFeedback,
+      endGame,
+      returnToMenu,
+      selectMode,
+      setSelectedType,
+      startGame,
+      togglePause,
+      setManualPaused,
+      setTutorialState,
+      setTutorialPowerUps,
+      setTutorialFeedback,
+    ],
   );
 
   return {

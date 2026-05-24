@@ -10,6 +10,9 @@ interface GameUIProps {
   onSelectType: (type: WasteTypeId) => void;
   onDismissFeedback: () => void;
   onTogglePause: () => void;
+  onEndGame: () => void;
+  onToggleFullscreen?: () => void;
+  isFullscreen?: boolean;
   layout?: "overlay" | "stacked";
 }
 
@@ -57,13 +60,25 @@ export default function GameUI({
   onSelectType,
   onDismissFeedback,
   onTogglePause,
+  onEndGame,
+  onToggleFullscreen,
+  isFullscreen = false,
   layout = "overlay",
 }: GameUIProps) {
   const streakMultiplier = getStreakMultiplier(state.streak);
   const streakToneClass = getStreakTone(streakMultiplier);
-  const pauseLabel = state.manualPaused ? "Reanudar" : "Pausa";
+  const pauseLabel = "Pausa";
   const livesLabel = state.lives === null ? "INF" : state.lives;
   const timerLabel = formatTimer(state.timerMs);
+  const pauseButtonClassName = state.manualPaused
+    ? "flex h-10 w-10 items-center justify-center rounded-full border border-emerald-200/70 bg-emerald-500/25 text-emerald-50 shadow-lg shadow-emerald-900/20 backdrop-blur-sm transition hover:bg-emerald-500/35"
+    : "flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black/55 text-white shadow-lg shadow-black/30 backdrop-blur-sm transition hover:bg-black/70";
+  const fullscreenAvailable = Boolean(onToggleFullscreen);
+  const fullscreenToggleClassName = fullscreenAvailable
+    ? isFullscreen
+      ? "bg-emerald-500/90"
+      : "bg-slate-200/70"
+    : "bg-slate-200/40 opacity-60";
 
   const isOverlay = layout === "overlay";
   const containerClassName = isOverlay
@@ -75,114 +90,191 @@ export default function GameUI({
   const feedbackCardClassName = isOverlay
     ? "rounded-2xl border border-rose-200/70 bg-card/95 p-3 shadow-2xl shadow-rose-900/10 backdrop-blur dark:border-rose-400/40 dark:bg-rose-950/70 sm:p-5"
     : "rounded-2xl border border-rose-200/70 bg-card/95 p-3 shadow-xl shadow-rose-900/10 backdrop-blur dark:border-rose-400/40 dark:bg-rose-950/70";
+  const feedbackAnchorClassName =
+    "pointer-events-none absolute bottom-24 left-1/2 w-full max-w-2xl -translate-x-1/2 px-2 opacity-0 sm:bottom-32 sm:px-0";
 
   return (
     <div className={containerClassName}>
-      <div className="pointer-events-auto absolute left-3 top-3 z-30">
-        <AnimatedButton
-          type="button"
-          onClick={onTogglePause}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-card/85 text-foreground shadow-md backdrop-blur-sm hover:bg-card"
-          aria-pressed={state.manualPaused}
-          title={pauseLabel}
-          aria-label={pauseLabel}
-        >
-          {state.manualPaused ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M8 5h3v14H8V5zm5 0h3v14h-3V5z" />
-            </svg>
-          )}
-        </AnimatedButton>
-      </div>
       <div className="flex h-full flex-col justify-between">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-          <motion.div
-            key={`score-${state.score}`}
-            initial={{ scale: 1.08 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.26, ease: "easeOut" }}
-            className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Puntos</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl">{state.score}</p>
-          </motion.div>
-
-          <motion.div
-            key={`lives-${livesLabel}`}
-            initial={{ y: -3 }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.24, ease: "easeOut" }}
-            className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Vidas</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl">{livesLabel}</p>
-          </motion.div>
-
-          <div className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Racha</p>
-            <p className="mt-1 flex items-center gap-2 text-lg font-black sm:text-2xl">
-              <span className={streakToneClass}>{state.streak}</span>
-              <span className={`inline-flex items-center gap-1 text-xs font-semibold sm:text-sm ${streakToneClass}`}>
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="currentColor">
-                  <path d="M12 2c2.5 3.5 3 5.6 2 7.6 1.7-.3 3.6-2 3.6-4.8 2.6 2.3 4 5.4 4 8 0 5-4.2 9.2-9.6 9.2S2.4 17.8 2.4 12.8c0-3.4 1.7-6.6 4.6-8.7-.4 2.7.8 4.9 2.7 5.6C9 7.1 9.8 4.9 12 2z" />
-                </svg>
-                x{streakMultiplier}
-              </span>
-            </p>
+        <div className="space-y-2">
+          <div className="pointer-events-auto flex flex-wrap items-center gap-2">
+            <AnimatedButton
+              type="button"
+              onClick={onTogglePause}
+              className={pauseButtonClassName}
+              aria-pressed={state.manualPaused}
+              title={pauseLabel}
+              aria-label={pauseLabel}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M8 5h3v14H8V5zm5 0h3v14h-3V5z" />
+              </svg>
+            </AnimatedButton>
           </div>
 
-          <motion.div
-            key={`timer-${timerLabel}`}
-            initial={{ opacity: 0.65 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Tiempo</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl">{timerLabel}</p>
-          </motion.div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3" data-tutorial="tutorial-hud-stats">
+            <motion.div
+              key={`score-${state.score}`}
+              initial={{ scale: 1.08 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.26, ease: "easeOut" }}
+              className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Puntos</p>
+              <p className="mt-1 text-lg font-black sm:text-2xl">{state.score}</p>
+            </motion.div>
+
+            <motion.div
+              key={`lives-${livesLabel}`}
+              initial={{ y: -3 }}
+              animate={{ y: 0 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+              className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Vidas</p>
+              <p className="mt-1 text-lg font-black sm:text-2xl">{livesLabel}</p>
+            </motion.div>
+
+            <div className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Racha</p>
+              <p className="mt-1 flex items-center gap-2 text-lg font-black sm:text-2xl">
+                <span className={streakToneClass}>{state.streak}</span>
+                <span className={`inline-flex items-center gap-1 text-xs font-semibold sm:text-sm ${streakToneClass}`}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="currentColor">
+                    <path d="M12 2c2.5 3.5 3 5.6 2 7.6 1.7-.3 3.6-2 3.6-4.8 2.6 2.3 4 5.4 4 8 0 5-4.2 9.2-9.6 9.2S2.4 17.8 2.4 12.8c0-3.4 1.7-6.6 4.6-8.7-.4 2.7.8 4.9 2.7 5.6C9 7.1 9.8 4.9 12 2z" />
+                  </svg>
+                  x{streakMultiplier}
+                </span>
+              </p>
+            </div>
+
+            <motion.div
+              key={`timer-${timerLabel}`}
+              initial={{ opacity: 0.65 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="rounded-2xl border border-border/80 bg-card/85 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm sm:px-4 sm:py-3"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">Tiempo</p>
+              <p className="mt-1 text-lg font-black sm:text-2xl">{timerLabel}</p>
+            </motion.div>
+          </div>
         </div>
 
-        <div className="pointer-events-auto grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+        <div className="pointer-events-auto grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3" data-tutorial="tutorial-waste-selector">
           {WASTE_TYPES.map((waste) => {
             const selected = state.selectedType === waste.id;
+            const buttonStyle = {
+              backgroundColor: waste.colorHex,
+              backgroundImage: `linear-gradient(160deg, ${waste.colorHex} 0%, ${waste.colorHex} 58%, rgba(255, 255, 255, 0.22) 100%)`,
+            };
 
             return (
               <AnimatedButton
                 key={waste.id}
                 type="button"
                 onClick={() => onSelectType(waste.id)}
-                className={`rounded-2xl px-3 py-3 text-center shadow-lg transition-all sm:px-4 sm:py-4 ${selected
-                    ? "ring-3 ring-white/80 ring-offset-2 ring-offset-transparent scale-105 shadow-xl"
-                    : "opacity-80 hover:opacity-100 hover:shadow-xl"
-                  }`}
-                style={{ backgroundColor: waste.colorHex }}
+                className={`group relative overflow-hidden rounded-2xl border border-white/35 px-3 py-3 text-left shadow-lg transition-all sm:px-4 sm:py-4 ${
+                  selected
+                    ? "ring-3 ring-white/80 ring-offset-2 ring-offset-transparent scale-[1.03] shadow-2xl"
+                    : "opacity-90 hover:opacity-100 hover:shadow-xl"
+                }`}
+                style={buttonStyle}
                 aria-pressed={selected}
               >
-                <p className="text-sm font-extrabold text-white drop-shadow-sm sm:text-base">
-                  {waste.label}
-                </p>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/35 via-white/0 to-black/20 opacity-80" />
+                <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-white/25 blur-2xl" />
+                <div className="relative z-10 flex h-full items-center justify-center text-center">
+                  <span className="text-sm font-extrabold text-white drop-shadow-sm sm:text-base">
+                    {waste.label}
+                  </span>
+                </div>
               </AnimatedButton>
             );
           })}
         </div>
       </div>
+
+      <AnimatePresence>
+        {state.manualPaused ? (
+          <motion.div
+            className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 rounded-3xl bg-black/40 backdrop-blur-[2px]" />
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className="relative w-full max-w-md rounded-3xl border border-border bg-card/95 p-5 shadow-2xl shadow-black/30 backdrop-blur sm:p-6"
+            >
+              <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-primary">Pausa</p>
+              <h3 className="mt-2 text-xl font-black text-foreground sm:text-2xl">Juego en pausa</h3>
+
+              <div className="mt-4 grid gap-3">
+                <AnimatedButton
+                  type="button"
+                  onClick={onTogglePause}
+                  className="w-full rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg"
+                >
+                  Reanudar
+                </AnimatedButton>
+                <AnimatedButton
+                  type="button"
+                  onClick={onEndGame}
+                  className="w-full rounded-2xl border border-rose-200/70 bg-rose-500/10 px-4 py-2.5 text-sm font-semibold text-rose-700 shadow-lg shadow-rose-900/10"
+                >
+                  Terminar partida
+                </AnimatedButton>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-border bg-surface-raised/70 p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                  Configuracion
+                </p>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Pantalla completa</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isFullscreen ? "Activada" : "Desactivada"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onToggleFullscreen}
+                    disabled={!fullscreenAvailable}
+                    role="switch"
+                    aria-checked={isFullscreen}
+                    aria-label="Pantalla completa"
+                    className={`relative h-8 w-14 rounded-full border border-border transition ${fullscreenToggleClassName}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition ${
+                        isFullscreen ? "translate-x-6" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <div
+        className={feedbackAnchorClassName}
+        data-tutorial="tutorial-wrong-feedback"
+        aria-hidden="true"
+      />
 
       <AnimatePresence>
         {state.wrongFeedback ? (

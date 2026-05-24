@@ -129,6 +129,7 @@ export default function GameCanvas({ state, bridge, isFullscreen = false, classN
       style={{ touchAction: "none" }}
       aria-label="Canvas Eco-Catch con Pixi"
       aria-busy={isLoading}
+      data-tutorial="tutorial-game-canvas"
     >
       <canvas ref={canvasRef} className="h-full w-full touch-none" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.48),_transparent_54%)]" />
