@@ -1,7 +1,7 @@
 "use client";
 
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type MotionProps } from "framer-motion";
 import { WASTE_TYPES, type WasteTypeId } from "@/game/config/wasteTypes";
 import { getStreakMultiplier, type GameState } from "@/game/useGameState";
 
@@ -16,9 +16,10 @@ interface GameUIProps {
   layout?: "overlay" | "stacked";
 }
 
-interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
-}
+type AnimatedButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof MotionProps> &
+  MotionProps & {
+    children: ReactNode;
+  };
 
 function AnimatedButton({ children, className = "", ...props }: AnimatedButtonProps) {
   return (

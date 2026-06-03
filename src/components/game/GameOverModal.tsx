@@ -1,7 +1,7 @@
 "use client";
 
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type MotionProps } from "framer-motion";
 import type { GameRoundSummary, ScoreSaveStatus } from "@/game/useGameState";
 
 interface GameOverModalProps {
@@ -13,9 +13,10 @@ interface GameOverModalProps {
   onBackToMenu: () => void;
 }
 
-interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
-}
+type AnimatedButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof MotionProps> &
+  MotionProps & {
+    children: ReactNode;
+  };
 
 function AnimatedButton({ children, className = "", ...props }: AnimatedButtonProps) {
   return (

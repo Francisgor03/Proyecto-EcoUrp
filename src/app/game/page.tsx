@@ -4,7 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useAnimationControls, type HTMLMotionProps } from "framer-motion";
+import { AnimatePresence, motion, useAnimationControls, type MotionProps } from "framer-motion";
 import { useAuth } from "@/components/auth/AuthProvider";
 import GameUI from "@/components/game/GameUI";
 import GameOverModal from "@/components/game/GameOverModal";
@@ -21,9 +21,10 @@ const GameCanvas = dynamic(() => import("@/components/game/GameCanvas"), {
   ssr: false,
 });
 
-interface AnimatedButtonProps extends HTMLMotionProps<"button"> {
-  children: ReactNode;
-}
+type AnimatedButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof MotionProps> &
+  MotionProps & {
+    children: ReactNode;
+  };
 
 function AnimatedButton({ children, className = "", ...props }: AnimatedButtonProps) {
   return (
@@ -32,7 +33,7 @@ function AnimatedButton({ children, className = "", ...props }: AnimatedButtonPr
       whileHover={{ scale: 1.05, y: -2 }}
       whileTap={{ scale: 0.95 }}
       transition={{ type: "spring", stiffness: 400, damping: 17 }}
-      {...(props as any)} 
+      {...props}
     >
       {children}
     </motion.button>
