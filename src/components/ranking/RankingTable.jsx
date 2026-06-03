@@ -120,6 +120,9 @@ function AchievementDot({ achievement, unlocked }) {
   );
 }
 
+/**
+ * @param {{ rows: any[], profileNames: any, achievementsMap?: any, achievements?: any[] }} props
+ */
 export default function RankingTable({ rows, profileNames, achievementsMap = {}, achievements = [] }) {
   const { user } = useAuth();
 
