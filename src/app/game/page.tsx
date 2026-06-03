@@ -4,7 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
+import { AnimatePresence, motion, useAnimationControls, type HTMLMotionProps } from "framer-motion";
 import { useAuth } from "@/components/auth/AuthProvider";
 import GameUI from "@/components/game/GameUI";
 import GameOverModal from "@/components/game/GameOverModal";
@@ -21,7 +21,7 @@ const GameCanvas = dynamic(() => import("@/components/game/GameCanvas"), {
   ssr: false,
 });
 
-interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface AnimatedButtonProps extends HTMLMotionProps<"button"> {
   children: ReactNode;
 }
 
