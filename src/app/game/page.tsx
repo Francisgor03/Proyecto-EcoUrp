@@ -30,9 +30,9 @@ function AnimatedButton({ children, className = "", ...props }: AnimatedButtonPr
     <motion.button
       className={className}
       whileHover={{ scale: 1.05, y: -2 }}
-      whileTap={{ scale: 0.94 }}
-      transition={{ type: "spring", stiffness: 520, damping: 32 }}
-      {...props}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      {...(props as any)} 
     >
       {children}
     </motion.button>
