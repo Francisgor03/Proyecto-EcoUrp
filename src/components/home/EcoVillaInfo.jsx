@@ -68,7 +68,7 @@ export default function EcoVillaInfo() {
 
       <div className="mx-auto max-w-6xl">
         {/* Title Block */}
-        <div className="mb-12 text-center">
+        <div className="mb-10 text-center">
           <p className="mb-3 inline-flex rounded-full border border-eco-emerald-200/50 bg-eco-emerald-100/50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-eco-emerald-700 shadow-sm sm:mb-4 sm:px-4 sm:text-xs">
             Humedales de Lima
           </p>
@@ -80,135 +80,132 @@ export default function EcoVillaInfo() {
           </p>
         </div>
 
-        {/* Dashboard Layout */}
-        <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
-          {/* Left Column: Interactive Nav List */}
-          <div className="flex flex-col gap-2 sm:flex-row lg:col-span-4 lg:flex-col lg:gap-3">
-            {Object.keys(tabConfig).map((tabKey) => {
-              const tab = tabConfig[tabKey];
-              const isActive = activeTab === tabKey;
-              return (
-                <button
-                  key={tabKey}
-                  onClick={() => setActiveTab(tabKey)}
-                  className={`relative flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-all duration-300 ${
-                    isActive
-                      ? `${tab.borderColor} bg-card shadow-md ring-1`
-                      : "border-border bg-card/40 hover:bg-card/85"
-                  }`}
-                >
-                  {/* Left Accent indicator */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTabIndicator"
-                      className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl ${tab.indicatorColor}`}
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl transition-colors duration-300 ${isActive ? tab.iconBg : "bg-surface-raised"}`}>
-                    {tab.icon}
-                  </span>
-                  <div className="min-w-0">
-                    <p className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? tab.textColor : "text-muted-foreground"}`}>
-                      {tab.subtitle}
-                    </p>
-                    <p className="truncate text-sm font-semibold text-foreground sm:text-base">
-                      {tab.label}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Right Column: Dynamic Panel with Split Layout */}
-          <div className="lg:col-span-8">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.28, ease: "easeOut" }}
-                className="overflow-hidden rounded-3xl border border-border bg-card/80 shadow-lg backdrop-blur-md"
+        {/* Tab Buttons (Horizontal Layout Above the Card) */}
+        <div className="grid grid-cols-2 gap-3 max-w-xl mx-auto mb-8">
+          {Object.keys(tabConfig).map((tabKey) => {
+            const tab = tabConfig[tabKey];
+            const isActive = activeTab === tabKey;
+            return (
+              <button
+                key={tabKey}
+                onClick={() => setActiveTab(tabKey)}
+                className={`relative flex items-center justify-center gap-3 rounded-2xl border p-4 text-left transition-all duration-300 ${
+                  isActive
+                    ? `${tab.borderColor} bg-card shadow-md ring-1`
+                    : "border-border bg-card/40 hover:bg-card/85"
+                }`}
               >
-                <div className="grid gap-0 lg:grid-cols-12">
-                  {/* Left side: text, stats, and attribution */}
-                  <div className="p-6 sm:p-8 lg:col-span-7 flex flex-col justify-between">
-                    <div>
-                      {/* Header Row */}
-                      <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${activeData.badgeClass}`}>
-                          {activeData.badge}
-                        </span>
-                      </div>
+                {/* Horizontal Underline Indicator */}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabIndicator"
+                    className={`absolute left-0 right-0 bottom-0 h-1 rounded-b-2xl ${tab.indicatorColor}`}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl transition-colors duration-300 ${isActive ? tab.iconBg : "bg-surface-raised"}`}>
+                  {tab.icon}
+                </span>
+                <div className="min-w-0">
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? tab.textColor : "text-muted-foreground"}`}>
+                    {tab.subtitle}
+                  </p>
+                  <p className="truncate text-sm font-semibold text-foreground sm:text-base">
+                    {tab.label}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
 
-                      {/* Header Title */}
-                      <h3 className="text-xl font-extrabold text-foreground sm:text-2xl lg:text-3xl mb-4">
-                        {activeData.title}
-                      </h3>
-
-                      {/* Description Text */}
-                      <p className="text-sm leading-relaxed text-muted-foreground sm:text-base mb-6">
-                        {activeData.description}
-                      </p>
+        {/* Full-width Dynamic Panel with Split Layout */}
+        <div className="w-full">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className="overflow-hidden rounded-3xl border border-border bg-card/80 shadow-lg backdrop-blur-md"
+            >
+              <div className="grid gap-0 lg:grid-cols-12">
+                {/* Left side: text, stats, and attribution */}
+                <div className="p-6 sm:p-8 lg:col-span-7 flex flex-col justify-between">
+                  <div>
+                    {/* Header Row */}
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${activeData.badgeClass}`}>
+                        {activeData.badge}
+                      </span>
                     </div>
 
-                    <div>
-                      {/* Stats Row */}
-                      <div className="grid gap-3 sm:grid-cols-3 mb-4">
-                        {activeData.stats.map((stat, i) => (
-                          <div
-                            key={i}
-                            className="rounded-2xl border border-border/80 bg-surface-raised/40 p-3.5 transition hover:bg-surface-raised/80"
-                          >
-                            <p className={`text-lg font-black sm:text-xl ${activeData.statColor}`}>
-                              {stat.value}
-                            </p>
-                            <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
-                              {stat.label}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
+                    {/* Header Title */}
+                    <h3 className="text-xl font-extrabold text-foreground sm:text-2xl lg:text-3xl mb-4">
+                      {activeData.title}
+                    </h3>
 
-                      {/* Attribution and Bridge Row */}
-                      <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
-                        {activeData.attribution && (
-                          <p className="text-[10px] text-muted-foreground/70 italic">
-                            {activeData.attribution}
-                          </p>
-                        )}
-                        
-                        {activeTab === "problem" && (
-                          <button
-                            type="button"
-                            onClick={() => setActiveTab("mission")}
-                            className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-eco-emerald-600 hover:text-eco-emerald-500 hover:underline text-left transition-colors"
-                          >
-                            <span>↓ Así respondemos: conoce Eco-Villa y el bote de totora</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    {/* Description Text */}
+                    <p className="text-sm leading-relaxed text-muted-foreground sm:text-base mb-6">
+                      {activeData.description}
+                    </p>
                   </div>
 
-                  {/* Right side: Image block */}
-                  <div className="relative aspect-[16/10] lg:aspect-auto lg:h-full lg:col-span-5 min-h-[240px]">
-                    <Image
-                      src={activeData.image}
-                      alt={activeData.title}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 350px"
-                      className="object-cover"
-                      priority
-                    />
-                    <div className="absolute inset-0 bg-eco-emerald-600/10" />
+                  <div>
+                    {/* Stats Row */}
+                    <div className="grid gap-3 sm:grid-cols-3 mb-4">
+                      {activeData.stats.map((stat, i) => (
+                        <div
+                          key={i}
+                          className="rounded-2xl border border-border/80 bg-surface-raised/40 p-3.5 transition hover:bg-surface-raised/80"
+                        >
+                          <p className={`text-lg font-black sm:text-xl ${activeData.statColor}`}>
+                            {stat.value}
+                          </p>
+                          <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
+                            {stat.label}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Attribution and Bridge Row */}
+                    <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
+                      {activeData.attribution && (
+                        <p className="text-[10px] text-muted-foreground/70 italic">
+                          {activeData.attribution}
+                        </p>
+                      )}
+                      
+                      {activeTab === "problem" && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("mission")}
+                          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-eco-emerald-600 hover:text-eco-emerald-500 hover:underline text-left transition-colors"
+                        >
+                          <span>↓ Así respondemos: conoce Eco-Villa y el bote de totora</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
+
+                {/* Right side: Image block */}
+                <div className="relative aspect-[16/10] lg:aspect-auto lg:h-full lg:col-span-5 min-h-[280px]">
+                  <Image
+                    src={activeData.image}
+                    alt={activeData.title}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 450px"
+                    className="object-cover"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-eco-emerald-600/10" />
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Global CTA Block */}
