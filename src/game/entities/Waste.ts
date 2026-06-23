@@ -51,6 +51,9 @@ export class Waste extends Container {
     this.isObstacle = options.isObstacle ?? false;
     this.isBirdRescue = options.isBirdRescue ?? false;
     this._fallSpeed = options.fallSpeed;
+    if (this.isObstacle) {
+      this._fallSpeed = 18 * (options.fallSpeed / 200);
+    }
 
     // En modo vertical originPerp es X; en horizontal es Y.
     this.originPerp = this.horizontal ? options.y : options.x;
@@ -68,7 +71,12 @@ export class Waste extends Container {
     // Parámetros de ondulación (usados en el eje perpendicular al movimiento).
     this.wobbleAmplitude = 6 + Math.random() * 12;
     this.wobbleFrequency = 0.0024 + Math.random() * 0.0025;
-    this.rotationSpeed = (Math.random() * 2 - 1) * 0.0018;
+    if (this.isObstacle) {
+      // El tronco de madera gira mucho menos
+      this.rotationSpeed = (Math.random() * 2 - 1) * 0.00015;
+    } else {
+      this.rotationSpeed = (Math.random() * 2 - 1) * 0.0018;
+    }
     this.phaseOffset = Math.random() * Math.PI * 2;
 
     this.x = options.x;
@@ -78,7 +86,12 @@ export class Waste extends Container {
   }
 
   public setFallSpeed(nextSpeed: number): void {
-    this._fallSpeed = Math.max(40, nextSpeed);
+    if (this.isObstacle) {
+      // La madera se desplaza más lento, coordinada con la velocidad del fondo (cerca de 18 px/s).
+      this._fallSpeed = 18 * (nextSpeed / 200);
+    } else {
+      this._fallSpeed = Math.max(40, nextSpeed);
+    }
   }
 
   /** Desplaza el origen del eje perpendicular (usado por parallax horizontal). */

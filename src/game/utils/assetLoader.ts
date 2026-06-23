@@ -19,6 +19,10 @@ import sprTachoVidrioImage from "@/assets/sprites/spr_tacho_vidrio.png";
 import sprVidrioBotellaImage from "@/assets/sprites/spr_vidrio_botella.png";
 import sprVidrioFrascoImage from "@/assets/sprites/spr_vidrio_frasco.png";
 import sprVidrioTarroImage from "@/assets/sprites/spr_vidrio_tarro.png";
+import sprPoderEscudoImage from "@/assets/sprites/poder_escudo.png";
+import sprPoderRayoImage from "@/assets/sprites/poder_rayo.png";
+import sprPoderRelojImage from "@/assets/sprites/poder_reloj.png";
+
 
 // Eco-Villa images
 import fondoEcoVillaImage from "@/assets/images/eco-villa/Fondo eco-villa.jpg";
@@ -36,8 +40,6 @@ import troncoEcoVillaImage from "@/assets/images/eco-villa/Tronco eco-villa.png"
 import { WASTE_IDS, getWasteType, type WasteTypeId } from "@/game/config/wasteTypes";
 import {
   POWER_UP_IDS,
-  getPowerUpDefinition,
-  type PowerUpDefinition,
   type PowerUpId,
 } from "@/game/config/powerUps";
 
@@ -93,6 +95,12 @@ const COLLECTOR_SPRITE_SOURCES: Record<WasteTypeId, StaticImageData> = {
   organic: sprTachoOrganicoImage,
 };
 
+const POWER_UP_SPRITE_SOURCES: Record<PowerUpId, StaticImageData> = {
+  shield: sprPoderEscudoImage,
+  lightning: sprPoderRayoImage,
+  hourglass: sprPoderRelojImage,
+};
+
 let assetCachePromise: Promise<LoadedGameAssets> | null = null;
 
 function resolveImageSource(image: string | StaticImageData): string {
@@ -126,21 +134,7 @@ function createWasteSvg(fillHex: string, label: string): string {
   `);
 }
 
-function createPowerUpSvg(definition: PowerUpDefinition): string {
-  return svgToDataUri(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24">
-      <defs>
-        <radialGradient id="p" cx="0.3" cy="0.3" r="0.9">
-          <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
-          <stop offset="1" stop-color="#000000" stop-opacity="0.12"/>
-        </radialGradient>
-      </defs>
-      <circle cx="12" cy="12" r="10" fill="${definition.colorHex}" stroke="#ffffff" stroke-width="1.4"/>
-      <circle cx="12" cy="12" r="10" fill="url(#p)"/>
-      <path d="${definition.iconPath}" fill="#ffffff" stroke="#0f172a" stroke-width="0.4"/>
-    </svg>
-  `);
-}
+
 
 function createCollectorSvg(): string {
   return svgToDataUri(`
@@ -271,8 +265,7 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
     registerAsset("ev-obstacle-log", resolveImageSource(troncoEcoVillaImage));
 
     for (const powerUpId of POWER_UP_IDS) {
-      const definition = getPowerUpDefinition(powerUpId);
-      registerAsset(POWER_UP_ASSET_KEYS[powerUpId], createPowerUpSvg(definition));
+      registerAsset(POWER_UP_ASSET_KEYS[powerUpId], resolveImageSource(POWER_UP_SPRITE_SOURCES[powerUpId]));
     }
 
     await Assets.load([
