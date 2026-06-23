@@ -119,9 +119,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        <EcoVillaInfo />
-
         <SeparationSection />
+
+        <EcoVillaInfo />
       </main>
 
       <footer className="mt-auto border-t border-border bg-surface-raised/70 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">

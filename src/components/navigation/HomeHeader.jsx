@@ -26,6 +26,7 @@ export default function HomeHeader() {
     return [
       { href: isHome ? "#reciclaje" : "/#reciclaje", label: "Reciclaje", isAnchor: true },
       { href: isHome ? "#separacion" : "/#separacion", label: "Separación", isAnchor: true },
+      { href: isHome ? "#eco-villa" : "/#eco-villa", label: "Pantanos de Villa", isAnchor: true },
       { href: "/game", label: "Jugar", isAnchor: false },
       { href: "/ranking", label: "Ranking", isAnchor: false },
     ];
