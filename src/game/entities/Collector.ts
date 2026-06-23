@@ -126,6 +126,14 @@ export class Collector extends Container {
     this.sprite.tint = 0xffffff;
   }
 
+  public setOilDirty(isDirty: boolean): void {
+    if (isDirty) {
+      this.sprite.tint = 0x4a3728; // Tono café de aceite sucio
+    } else {
+      this.sprite.tint = 0xffffff;
+    }
+  }
+
   // ─── Update ─────────────────────────────────────────────────────────────────
 
   public update(deltaMs: number): void {

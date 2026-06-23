@@ -347,6 +347,7 @@ export class EcoVillaEngine implements BaseEngine {
     if (this.oilSlowDurationRemainingMs > 0) {
       this.oilSlowDurationRemainingMs = Math.max(0, this.oilSlowDurationRemainingMs - deltaMs);
     }
+    this.collector.setOilDirty(this.oilSlowDurationRemainingMs > 0);
 
     this.applySpeedMultiplier(tickedState);
 
