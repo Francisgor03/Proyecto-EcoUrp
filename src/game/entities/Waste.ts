@@ -10,6 +10,9 @@ export interface WasteOptions {
   fallSpeed: number;
   /** Si es true el residuo flota horizontalmente (Eco-Villa). */
   horizontal?: boolean;
+  isOilSpill?: boolean;
+  isObstacle?: boolean;
+  isBirdRescue?: boolean;
 }
 
 /**
@@ -23,6 +26,9 @@ export class Waste extends Container {
   public readonly id: string;
   public readonly type: WasteTypeId;
   public readonly horizontal: boolean;
+  public readonly isOilSpill: boolean;
+  public readonly isObstacle: boolean;
+  public readonly isBirdRescue: boolean;
 
   private readonly sprite: Sprite;
   private readonly wobbleAmplitude: number;
@@ -41,6 +47,9 @@ export class Waste extends Container {
     this.id = options.id;
     this.type = options.type;
     this.horizontal = options.horizontal ?? false;
+    this.isOilSpill = options.isOilSpill ?? false;
+    this.isObstacle = options.isObstacle ?? false;
+    this.isBirdRescue = options.isBirdRescue ?? false;
     this._fallSpeed = options.fallSpeed;
 
     // En modo vertical originPerp es X; en horizontal es Y.
@@ -85,8 +94,8 @@ export class Waste extends Container {
       this.wobbleAmplitude;
 
     if (this.horizontal) {
-      // Eco-Villa: avanza hacia la derecha, ondula suavemente en Y.
-      this.x += (this._fallSpeed * deltaMs) / 1000;
+      // Eco-Villa: avanza hacia la izquierda, ondula suavemente en Y.
+      this.x -= (this._fallSpeed * deltaMs) / 1000;
       this.y = this.originPerp + wave;
     } else {
       // Eco-Catch: cae hacia abajo, wobble suave en X.

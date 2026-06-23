@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Application } from "pixi.js";
 import { GameEngine } from "@/game/core/GameEngine";
+import { EcoVillaEngine } from "@/game/core/EcoVillaEngine";
 import { preloadGameAssets } from "@/game/utils/assetLoader";
 import type { GameState } from "@/game/useGameState";
-import type { GameStateBridge } from "@/game/core/GameEngine";
+import type { GameStateBridge, BaseEngine } from "@/game/core/BaseEngine";
 
 export interface GameCanvasProps {
   state: GameState;
@@ -17,7 +18,7 @@ export interface GameCanvasProps {
 export default function GameCanvas({ state, bridge, isFullscreen = false, className = "" }: GameCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const engineRef = useRef<GameEngine | null>(null);
+  const engineRef = useRef<BaseEngine | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -56,11 +57,17 @@ export default function GameCanvas({ state, bridge, isFullscreen = false, classN
           return;
         }
 
-        const engine = new GameEngine({
-          app: pixiApp,
-          assets: loadedAssets,
-          bridge,
-        });
+        const engine = state.mode === "eco-villa"
+          ? new EcoVillaEngine({
+              app: pixiApp,
+              assets: loadedAssets,
+              bridge,
+            })
+          : new GameEngine({
+              app: pixiApp,
+              assets: loadedAssets,
+              bridge,
+            });
 
         engineRef.current = engine;
         engine.resize(pixiApp.renderer.width, pixiApp.renderer.height);
@@ -127,7 +134,7 @@ export default function GameCanvas({ state, bridge, isFullscreen = false, classN
       ref={wrapperRef}
       className={wrapperClassName}
       style={{ touchAction: "none" }}
-      aria-label="Canvas Eco-Catch con Pixi"
+      aria-label={state.mode === "eco-villa" ? "Canvas Eco-Villa con Pixi" : "Canvas Eco-Catch con Pixi"}
       aria-busy={isLoading}
       data-tutorial="tutorial-game-canvas"
     >
@@ -148,7 +155,9 @@ export default function GameCanvas({ state, bridge, isFullscreen = false, classN
                 </svg>
               </div>
             </div>
-            <p className="mt-3 text-sm font-semibold text-foreground">Cargando Eco-Catch</p>
+            <p className="mt-3 text-sm font-semibold text-foreground">
+              {state.mode === "eco-villa" ? "Cargando Eco-Villa" : "Cargando Eco-Catch"}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {loadError ?? "Preparando recursos del juego..."}
             </p>

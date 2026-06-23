@@ -49,18 +49,15 @@ export class CollisionSystem {
   // ─── Horizontal mode (Eco-Villa) ────────────────────────────────────────────
 
   /**
-   * Residuo cruzó el borde derecho sin ser atrapado.
-   * Esto significa que llegó a la zona de nidos de las aves → penalización.
+   * Residuo cruzó el borde izquierdo sin ser atrapado.
+   * Esto significa que llegó a la zona de nidos de las aves (extremo izquierdo) → penalización.
    */
-  public static isWastePastRightEdge(waste: Waste, canvasWidth: number): boolean {
-    return waste.x - waste.getCollisionRadius() > canvasWidth;
+  public static isWastePastLeftEdge(waste: Waste): boolean {
+    return waste.x + waste.getCollisionRadius() < 0;
   }
 
-  /** Power-up cruzó el borde derecho en modo horizontal (simplemente se descarta). */
-  public static isPowerUpPastRightEdge(
-    powerUp: PowerUp,
-    canvasWidth: number,
-  ): boolean {
-    return powerUp.x - powerUp.getCollisionRadius() > canvasWidth;
+  /** Power-up cruzó el borde izquierdo en modo horizontal (simplemente se descarta). */
+  public static isPowerUpPastLeftEdge(powerUp: PowerUp): boolean {
+    return powerUp.x + powerUp.getCollisionRadius() < 0;
   }
 }

@@ -22,7 +22,7 @@ import type {
   GameStateSnapshot,
   GameSummary,
   TutorialRuntime,
-} from "@/game/core/GameEngine";
+} from "@/game/core/BaseEngine";
 import { supabase } from "@/lib/supabaseClient";
 import { saveTachoSession } from "@/lib/saveTachoSession";
 import { saveTachoHighScore } from "@/lib/saveTachoHighScore";
@@ -696,6 +696,73 @@ export function useGameState(initialMode: GameModeId = "normal"): UseGameStateRe
           };
         }),
       onForceGameOver: (reason) => applyState((previous) => completeRound(previous, reason)),
+      onBirdRescue: () =>
+        applyState((previous) => {
+          if (previous.phase !== "playing") {
+            return previous;
+          }
+
+          const correct = previous.correct + 1;
+          const streak = previous.streak + 1;
+          const bestStreak = Math.max(previous.bestStreak, streak);
+          const wrong = previous.wrong;
+          const missed = previous.missed;
+          const accuracy = computeAccuracy(correct, wrong, missed);
+          
+          const modeConfig = getGameMode(previous.mode);
+          const hasFiniteLives = previous.lives !== null;
+          const nextLives = hasFiniteLives
+            ? Math.min(modeConfig.lives, (previous.lives ?? 0) + 1)
+            : null;
+
+          return {
+            ...previous,
+            score: previous.score + 5,
+            correct,
+            streak,
+            bestStreak,
+            lives: nextLives,
+            accuracy,
+            wrongPauseMs: 0,
+            wrongFeedback: null,
+          };
+        }),
+      onObstacleHit: () =>
+        applyState((previous) => {
+          if (previous.phase !== "playing") {
+            return previous;
+          }
+
+          const wrong = previous.wrong + 1;
+          const correct = previous.correct;
+          const missed = previous.missed;
+          const accuracy = computeAccuracy(correct, wrong, missed);
+
+          const shieldState = consumeShield(previous.powerUps);
+          const shieldConsumed = shieldState.consumed;
+
+          const hasFiniteLives = previous.lives !== null;
+          const nextLives = hasFiniteLives
+            ? shieldConsumed
+              ? previous.lives
+              : Math.max(0, (previous.lives ?? 0) - 1)
+            : null;
+
+          const nextState: GameState = {
+            ...previous,
+            wrong,
+            streak: shieldConsumed ? previous.streak : 0,
+            lives: nextLives,
+            accuracy,
+            powerUps: shieldState.powerUps,
+          };
+
+          if (hasFiniteLives && (nextLives ?? 0) <= 0) {
+            return completeRound(nextState, "lives");
+          }
+
+          return nextState;
+        }),
     }),
     [applyState],
   );

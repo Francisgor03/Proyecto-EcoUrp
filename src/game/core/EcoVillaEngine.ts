@@ -1,5 +1,5 @@
-import { Application, Container, Sprite } from "pixi.js";
-import { buildWrongBinFeedback, WASTE_IDS, type WasteTypeId } from "@/game/config/wasteTypes";
+import { Application, Container, Sprite, Texture } from "pixi.js";
+import { WASTE_IDS, type WasteTypeId } from "@/game/config/wasteTypes";
 import {
   POWER_UP_DROP_CHANCE,
   POWER_UP_IDS,
@@ -25,14 +25,13 @@ interface ParallaxLayer {
   width: number;
 }
 
-const COLLECTOR_BOTTOM_OFFSET = 152;
 const MAX_PLAY_WIDTH = 900;
 const PLAY_PADDING = 52;
 
 /**
- * Motor principal del juego Eco-Catch (caída vertical) con render Pixi.
+ * Motor especializado para Eco-Villa (jugabilidad horizontal de derecha a izquierda).
  */
-export class GameEngine implements BaseEngine {
+export class EcoVillaEngine implements BaseEngine {
   private readonly app: Application;
   private readonly assets: LoadedGameAssets;
   private readonly bridge: GameStateBridge;
@@ -54,8 +53,6 @@ export class GameEngine implements BaseEngine {
   private readonly difficultyManager: DifficultyManager;
   private currentDifficulty: DifficultySnapshot;
   private readonly spawnSystem: SpawnSystem;
-  private shouldPauseAfterError = false;
-  private tutorialSpawnsBlocked = false;
 
   private isRoundRunning = false;
   private spawnedItemCount = 0;
@@ -68,12 +65,21 @@ export class GameEngine implements BaseEngine {
 
   private errorPulseRemainingMs = 0;
 
+  // Variables para la ralentización por aceite
+  private oilSlowDurationRemainingMs = 0;
+
+  // Controles teclado
   private keyboardLeftPressed = false;
   private keyboardRightPressed = false;
+  private keyboardUpPressed = false;
+  private keyboardDownPressed = false;
 
+  // Controles touch 2D
   private touchTrackingActive = false;
   private touchLastX = 0;
-  private touchDirection = 0;
+  private touchLastY = 0;
+  private touchDirectionX = 0;
+  private touchDirectionY = 0;
   private touchDirectionMs = 0;
 
   private readonly keyDownHandler: (event: KeyboardEvent) => void;
@@ -103,17 +109,22 @@ export class GameEngine implements BaseEngine {
     this.setupParallax();
 
     const playBounds = this.getPlayBounds();
+    const waterBounds = this.getWaterBounds();
 
+    // En Eco-Villa el recolector se mueve con la balsa en 2D
     this.collector = new Collector({
       textures: this.assets.collectors,
-      startX: this.width / 2,
-      y: this.getCollectorY(),
+      startX: this.width / 4, // Empezar en la parte izquierda
+      y: this.height / 2,
       minX: playBounds.minX,
       maxX: playBounds.maxX,
-      moveSpeed: 360,
+      moveSpeed: 380,
       selectedType: initialState.selectedType,
       baseScale: this.resolveCollectorScale(),
-      horizontal: false,
+      horizontal: true,
+      minY: waterBounds.minY,
+      maxY: waterBounds.maxY,
+      ecoVillaCollectorTexture: this.assets.ecoVilla?.collector,
     });
 
     this.errorIcon = new Sprite(this.assets.errorIcon);
@@ -129,7 +140,9 @@ export class GameEngine implements BaseEngine {
     this.spawnSystem = new SpawnSystem({
       minX: playBounds.minX,
       maxX: playBounds.maxX,
-      horizontal: false,
+      minY: waterBounds.minY,
+      maxY: waterBounds.maxY,
+      horizontal: true,
       getCurrentSpawnMs: () => this.currentDifficulty.spawnMs,
       onSpawn: (pos) => this.spawnItem(pos),
     });
@@ -157,10 +170,10 @@ export class GameEngine implements BaseEngine {
 
   public startRound(): void {
     const snapshot = this.bridge.getState();
-    const blockSpawns = snapshot.tutorial?.blockSpawns ?? false;
 
     this.isRoundRunning = true;
     this.spawnedItemCount = 0;
+    this.oilSlowDurationRemainingMs = 0;
 
     this.difficultyManager.setMode(snapshot.mode);
     this.currentDifficulty = this.difficultyManager.getCurrent(snapshot.durationMs, snapshot.correct);
@@ -168,22 +181,24 @@ export class GameEngine implements BaseEngine {
     this.clearWastes();
     this.clearPowerUps();
 
-    this.collector.x = this.width / 2;
-    this.collector.y = this.getCollectorY();
+    // Resetear posición de la balsa
+    this.collector.x = this.width / 4;
+    this.collector.y = this.height / 2;
     this.collector.setMoveDirection(0);
-    this.collector.applySelectedType(snapshot.selectedType);
+    this.collector.setMoveDirectionY(0);
     this.collector.setSpeedMultiplier(1);
 
+    const waterBounds = this.getWaterBounds();
     this.spawnSystem.setBounds(
       this.getPlayBounds().minX,
       this.getPlayBounds().maxX,
+      waterBounds.minY,
+      waterBounds.maxY,
     );
 
-    this.spawnSystem.setPaused(blockSpawns);
+    this.spawnSystem.setPaused(false);
     this.spawnSystem.reset();
-    if (!blockSpawns) {
-      this.spawnSystem.forceSpawn();
-    }
+    this.spawnSystem.forceSpawn();
 
     this.shakeRemainingMs = 0;
     this.shakeMagnitude = 0;
@@ -199,7 +214,9 @@ export class GameEngine implements BaseEngine {
     this.isRoundRunning = false;
     this.spawnSystem.setPaused(true);
     this.collector.setMoveDirection(0);
-    this.touchDirection = 0;
+    this.collector.setMoveDirectionY(0);
+    this.touchDirectionX = 0;
+    this.touchDirectionY = 0;
     this.touchDirectionMs = 0;
 
     this.clearWastes();
@@ -211,17 +228,21 @@ export class GameEngine implements BaseEngine {
     this.height = height;
 
     const playBounds = this.getPlayBounds();
+    const waterBounds = this.getWaterBounds();
 
     this.spawnSystem.setBounds(
       playBounds.minX,
       playBounds.maxX,
+      waterBounds.minY,
+      waterBounds.maxY,
     );
     this.collector.setBounds(
       playBounds.minX,
       playBounds.maxX,
+      waterBounds.minY,
+      waterBounds.maxY,
     );
     this.collector.setBaseScale(this.resolveCollectorScale());
-    this.collector.y = this.getCollectorY();
 
     this.parallaxLayers.forEach((layer) => {
       this.layoutParallaxLayer(layer);
@@ -248,10 +269,11 @@ export class GameEngine implements BaseEngine {
   }
 
   private setupParallax(): void {
+    if (!this.assets.ecoVilla) return;
+
     const layersConfig = [
-      { texture: this.assets.backgrounds.far, speed: 8, alpha: 0.28, tint: 0x9ca3af },
-      { texture: this.assets.backgrounds.mid, speed: 16, alpha: 0.36, tint: 0x93c5fd },
-      { texture: this.assets.backgrounds.near, speed: 28, alpha: 0.5, tint: 0xffffff },
+      { texture: this.assets.ecoVilla.backgroundFar, speed: 6, alpha: 1.0, tint: 0xffffff },
+      { texture: this.assets.ecoVilla.backgroundNear, speed: 18, alpha: 1.0, tint: 0xffffff },
     ];
 
     for (const layerConfig of layersConfig) {
@@ -309,19 +331,10 @@ export class GameEngine implements BaseEngine {
       return;
     }
 
-    const blockSpawns = tickedState.tutorial?.blockSpawns ?? false;
-    if (blockSpawns !== this.tutorialSpawnsBlocked) {
-      this.tutorialSpawnsBlocked = blockSpawns;
-      if (blockSpawns) {
-        this.clearWastes();
-        this.clearPowerUps();
-        this.spawnSystem.setPaused(true);
-      }
-    }
-
     if (tickedState.manualPaused) {
       this.spawnSystem.setPaused(true);
       this.collector.setMoveDirection(0);
+      this.collector.setMoveDirectionY(0);
       return;
     }
 
@@ -330,67 +343,45 @@ export class GameEngine implements BaseEngine {
     this.difficultyManager.setMode(tickedState.mode);
     this.currentDifficulty = this.difficultyManager.getCurrent(tickedState.durationMs, tickedState.correct);
 
-    this.collector.applySelectedType(tickedState.selectedType);
-    this.applyPowerUpEffects(tickedState);
-
-    if (tickedState.wrongPauseMs > 0) {
-      this.spawnSystem.setPaused(true);
-      this.collector.setMoveDirection(0);
-      this.collector.update(deltaMs);
-      this.particleEffect.update(deltaMs);
-      this.updateScreenShake(deltaMs);
-      this.updateErrorIcon(deltaMs);
-      return;
+    // Ralentización por aceite
+    if (this.oilSlowDurationRemainingMs > 0) {
+      this.oilSlowDurationRemainingMs = Math.max(0, this.oilSlowDurationRemainingMs - deltaMs);
     }
 
-    if (!blockSpawns) {
-      this.spawnSystem.setPaused(false);
-    }
-    this.shouldPauseAfterError = false;
+    this.applySpeedMultiplier(tickedState);
 
-    const moveDirection = this.computeMoveDirection(deltaMs);
-    this.collector.setMoveDirection(moveDirection);
+    // Mover balsa
+    const moveX = this.computeMoveDirectionX(deltaMs);
+    const moveY = this.computeMoveDirectionY(deltaMs);
+    this.collector.setMoveDirection(moveX);
+    this.collector.setMoveDirectionY(moveY);
     this.collector.update(deltaMs);
 
-    if (!blockSpawns) {
-      this.spawnSystem.update(deltaMs);
-    }
-    const fallSpeed = this.resolveFallSpeed(tickedState);
+    this.spawnSystem.setPaused(false);
+    this.spawnSystem.update(deltaMs);
 
+    const fallSpeed = this.resolveDriftSpeed(tickedState);
+
+    // Actualizar residuos, obstáculos, aves
     for (let index = this.wastes.length - 1; index >= 0; index -= 1) {
       const waste = this.wastes[index];
       waste.setFallSpeed(fallSpeed);
       waste.update(deltaMs);
 
       if (CollisionSystem.isCollectorTouchingWaste(this.collector, waste)) {
-        this.resolveCollectorCollision(index, waste, tickedState.selectedType);
-
-        if (!this.isRoundRunning) {
-          return;
-        }
-
-        if (this.shouldPauseAfterError) {
-          this.spawnSystem.setPaused(true);
-          this.collector.setMoveDirection(0);
-          this.collector.update(deltaMs);
-          this.particleEffect.update(deltaMs);
-          this.updateScreenShake(deltaMs);
-          this.updateErrorIcon(deltaMs);
-          return;
-        }
-
+        this.resolveCollectorCollision(index, waste);
+        if (!this.isRoundRunning) return;
         continue;
       }
 
-      if (CollisionSystem.isWasteOutOfBounds(waste, this.height + 20)) {
+      // El residuo se escapó por el borde izquierdo
+      if (CollisionSystem.isWastePastLeftEdge(waste)) {
         this.resolveMissedWaste(index, waste);
-
-        if (!this.isRoundRunning) {
-          return;
-        }
+        if (!this.isRoundRunning) return;
       }
     }
 
+    // Actualizar power-ups
     for (let index = this.powerUps.length - 1; index >= 0; index -= 1) {
       const powerUp = this.powerUps[index];
       powerUp.setFallSpeed(fallSpeed);
@@ -398,20 +389,12 @@ export class GameEngine implements BaseEngine {
 
       if (CollisionSystem.isCollectorTouchingPowerUp(this.collector, powerUp)) {
         this.resolvePowerUpCollision(index, powerUp);
-
-        if (!this.isRoundRunning) {
-          return;
-        }
-
+        if (!this.isRoundRunning) return;
         continue;
       }
 
-      if (CollisionSystem.isPowerUpOutOfBounds(powerUp, this.height + 20)) {
-        this.resolveMissedPowerUp(index, powerUp);
-
-        if (!this.isRoundRunning) {
-          return;
-        }
+      if (CollisionSystem.isPowerUpPastLeftEdge(powerUp)) {
+        this.removePowerUpAt(index);
       }
     }
 
@@ -420,66 +403,79 @@ export class GameEngine implements BaseEngine {
     this.updateErrorIcon(deltaMs);
   }
 
-  private resolveCollectorCollision(index: number, waste: Waste, selectedType: WasteTypeId): void {
+  private resolveCollectorCollision(index: number, waste: Waste): void {
     const hitX = waste.x;
     const hitY = waste.y;
-    const wasteType = waste.type;
 
-    this.removeWasteAt(index);
-
-    if (wasteType === selectedType) {
-      this.particleEffect.emitSuccessBurst(hitX, hitY, this.resolveTypeColor(wasteType));
-      const nextState = this.bridge.onCorrectCatch();
-
-      if (nextState.phase !== "playing") {
-        this.stopRound();
+    if (waste.isObstacle) {
+      // Chocar con tronco
+      this.removeWasteAt(index);
+      this.triggerErrorFeedback();
+      if (this.bridge.onObstacleHit) {
+        const nextState = this.bridge.onObstacleHit();
+        if (nextState.phase !== "playing") {
+          this.stopRound();
+        }
       }
-
       return;
     }
 
-    const feedback = buildWrongBinFeedback(wasteType, selectedType);
-    const nextState = this.bridge.onWrongCatch(feedback);
+    if (waste.isBirdRescue) {
+      // Rescatar ave
+      this.removeWasteAt(index);
+      this.particleEffect.emitSuccessBurst(hitX, hitY, "#10b981"); // Verde esmeralda
+      if (this.bridge.onBirdRescue) {
+        const nextState = this.bridge.onBirdRescue();
+        if (nextState.phase !== "playing") {
+          this.stopRound();
+        }
+      }
+      return;
+    }
+
+    if (waste.isOilSpill) {
+      // Mancha de aceite
+      this.removeWasteAt(index);
+      this.oilSlowDurationRemainingMs = 2000; // Ralentización por 2 segundos
+      this.particleEffect.emitSuccessBurst(hitX, hitY, "#78350f"); // Café
+      return;
+    }
+
+    // Basura estándar (recolección automática sin clasificar en Eco-Villa)
+    const typeColor = this.resolveTypeColor(waste.type);
+    this.removeWasteAt(index);
+    this.particleEffect.emitSuccessBurst(hitX, hitY, typeColor);
+
+    const nextState = this.bridge.onCorrectCatch();
     if (nextState.phase !== "playing") {
       this.stopRound();
-      return;
     }
-
-    const shouldPause = nextState.wrongPauseMs > 0;
-    if (shouldPause) {
-      this.triggerErrorFeedback();
-    }
-
-    this.shouldPauseAfterError = shouldPause;
   }
 
   private resolvePowerUpCollision(index: number, powerUp: PowerUp): void {
     this.removePowerUpAt(index);
-
     const nextState = this.bridge.onPowerUpCollected(powerUp.type);
     if (nextState.phase !== "playing") {
       this.stopRound();
     }
   }
 
-  private resolveMissedWaste(index: number, _waste: Waste): void {
+  private resolveMissedWaste(index: number, waste: Waste): void {
     this.removeWasteAt(index);
 
-    const nextState = this.bridge.onMissedWaste();
-    if (nextState.phase !== "playing") {
-      this.stopRound();
+    // Solo los residuos normales y las manchas de aceite restan vida al llegar a los nidos.
+    // Los obstáculos y aves no penalizan por fugarse.
+    if (!waste.isObstacle && !waste.isBirdRescue) {
+      const nextState = this.bridge.onMissedWaste();
+      if (nextState.phase !== "playing") {
+        this.stopRound();
+      }
     }
-  }
-
-  private resolveMissedPowerUp(index: number, _powerUp: PowerUp): void {
-    this.removePowerUpAt(index);
   }
 
   private removeWasteAt(index: number): void {
     const waste = this.wastes[index];
-    if (!waste) {
-      return;
-    }
+    if (!waste) return;
 
     this.wastes.splice(index, 1);
     waste.destroy({ children: true });
@@ -487,16 +483,10 @@ export class GameEngine implements BaseEngine {
 
   private removePowerUpAt(index: number): void {
     const powerUp = this.powerUps[index];
-    if (!powerUp) {
-      return;
-    }
+    if (!powerUp) return;
 
     this.powerUps.splice(index, 1);
     powerUp.destroy({ children: true });
-  }
-
-  private getCollectorY(): number {
-    return Math.max(100, this.height - COLLECTOR_BOTTOM_OFFSET);
   }
 
   private getPlayBounds(): { minX: number; maxX: number } {
@@ -510,19 +500,18 @@ export class GameEngine implements BaseEngine {
     };
   }
 
+  private getWaterBounds(): { minY: number; maxY: number } {
+    const margin = this.height * 0.15;
+    return {
+      minY: margin,
+      maxY: this.height - margin,
+    };
+  }
+
   private resolveCollectorScale(): number {
-    if (this.width < 360) {
-      return 0.66;
-    }
-
-    if (this.width < 420) {
-      return 0.72;
-    }
-
-    if (this.width < 520) {
-      return 0.82;
-    }
-
+    if (this.width < 360) return 0.66;
+    if (this.width < 420) return 0.72;
+    if (this.width < 520) return 0.82;
     return 1;
   }
 
@@ -541,41 +530,66 @@ export class GameEngine implements BaseEngine {
   }
 
   private spawnItem(pos: SpawnPosition): void {
-    const shouldSpawnPowerUp = Math.random() < POWER_UP_DROP_CHANCE;
+    const roll = Math.random();
 
-    if (shouldSpawnPowerUp) {
+    if (roll < 0.60) {
+      // 60% Basura estándar
+      this.spawnWaste(this.pickRandomWasteType(), pos, false, false, false);
+    } else if (roll < 0.70) {
+      // 10% PowerUp
       this.spawnPowerUp(this.pickRandomPowerUpType(), pos);
-      return;
+    } else if (roll < 0.82) {
+      // 12% Tronco obstáculo
+      this.spawnWaste("organic", pos, false, true, false);
+    } else if (roll < 0.92) {
+      // 10% Rescate de Ave
+      this.spawnWaste("organic", pos, false, false, true);
+    } else {
+      // 8% Mancha de aceite
+      this.spawnWaste("organic", pos, true, false, false);
     }
-
-    this.spawnWaste(this.pickRandomWasteType(), pos);
   }
 
-  private spawnWaste(type: WasteTypeId, pos: SpawnPosition): void {
-    if (!this.isRoundRunning) {
-      return;
+  private spawnWaste(
+    type: WasteTypeId,
+    pos: SpawnPosition,
+    isOilSpill = false,
+    isObstacle = false,
+    isBirdRescue = false
+  ): void {
+    if (!this.isRoundRunning || !this.assets.ecoVilla) return;
+
+    let textures: Texture[];
+    if (isObstacle) {
+      textures = [this.assets.ecoVilla.obstacleLog];
+    } else if (isBirdRescue) {
+      textures = [this.assets.ecoVilla.birdRescue];
+    } else if (isOilSpill) {
+      textures = this.assets.ecoVilla.oilSpills;
+    } else {
+      textures = this.assets.ecoVilla.wastes[type];
     }
 
     const waste = new Waste({
       id: `w-${this.spawnedItemCount}`,
       type,
-      textures: this.assets.wastes[type],
+      textures,
       x: pos.x,
       y: pos.y,
       fallSpeed: this.currentDifficulty.fallSpeed,
-      horizontal: false,
+      horizontal: true,
+      isOilSpill,
+      isObstacle,
+      isBirdRescue,
     });
 
     this.spawnedItemCount += 1;
-
     this.wastes.push(waste);
     this.worldRoot.addChild(waste);
   }
 
   private spawnPowerUp(type: PowerUpId, pos: SpawnPosition): void {
-    if (!this.isRoundRunning) {
-      return;
-    }
+    if (!this.isRoundRunning) return;
 
     const powerUp = new PowerUp({
       id: `p-${this.spawnedItemCount}`,
@@ -587,7 +601,6 @@ export class GameEngine implements BaseEngine {
     });
 
     this.spawnedItemCount += 1;
-
     this.powerUps.push(powerUp);
     this.worldRoot.addChild(powerUp);
   }
@@ -619,20 +632,27 @@ export class GameEngine implements BaseEngine {
     });
   }
 
-  private computeMoveDirection(deltaMs: number): number {
+  private computeMoveDirectionX(deltaMs: number): number {
     if (this.touchDirectionMs > 0) {
       this.touchDirectionMs = Math.max(0, this.touchDirectionMs - deltaMs);
-      if (this.touchDirectionMs === 0) {
-        this.touchDirection = 0;
-      }
     }
 
     const keyboardDirection =
       Number(this.keyboardRightPressed) - Number(this.keyboardLeftPressed);
-    const touchDirection = this.touchDirection;
+    
+    if (this.touchTrackingActive && this.touchDirectionX !== 0) {
+      return this.touchDirectionX;
+    }
 
-    if (touchDirection !== 0) {
-      return touchDirection;
+    return keyboardDirection;
+  }
+
+  private computeMoveDirectionY(deltaMs: number): number {
+    const keyboardDirection =
+      Number(this.keyboardDownPressed) - Number(this.keyboardUpPressed);
+
+    if (this.touchTrackingActive && this.touchDirectionY !== 0) {
+      return this.touchDirectionY;
     }
 
     return keyboardDirection;
@@ -692,47 +712,34 @@ export class GameEngine implements BaseEngine {
 
   private resolveTypeColor(type: WasteTypeId): string {
     switch (type) {
-      case "plastic":
-        return "#facc15";
-      case "paper":
-        return "#3b82f6";
-      case "glass":
-        return "#22c55e";
-      case "organic":
-        return "#a16207";
-      default:
-        return "#ffffff";
+      case "plastic": return "#facc15";
+      case "paper": return "#3b82f6";
+      case "glass": return "#22c55e";
+      case "organic": return "#a16207";
+      default: return "#ffffff";
     }
   }
 
-  private applyPowerUpEffects(snapshot: GameStateSnapshot): void {
-    if (snapshot.tutorial?.blockSpawns) {
-      this.collector.setSpeedMultiplier(1);
-      return;
+  private applySpeedMultiplier(snapshot: GameStateSnapshot): void {
+    let speedMultiplier = 1;
+
+    // Aceleración por rayo
+    if (snapshot.powerUps.some((p) => p.id === "lightning")) {
+      speedMultiplier = POWER_UP_SPEED_MULTIPLIER;
     }
 
-    const speedMultiplier = this.resolveCollectorSpeedMultiplier(snapshot);
+    // Ralentización por aceite
+    if (this.oilSlowDurationRemainingMs > 0) {
+      speedMultiplier *= 0.4;
+    }
+
     this.collector.setSpeedMultiplier(speedMultiplier);
   }
 
-  private resolveFallSpeed(snapshot: GameStateSnapshot): number {
-    if (snapshot.tutorial?.blockSpawns) {
-      return this.currentDifficulty.fallSpeed;
-    }
-
-    const slowActive = this.isPowerUpActive(snapshot.powerUps, "hourglass");
+  private resolveDriftSpeed(snapshot: GameStateSnapshot): number {
+    const slowActive = snapshot.powerUps.some((p) => p.id === "hourglass");
     const multiplier = slowActive ? POWER_UP_SLOW_MULTIPLIER : 1;
     return this.currentDifficulty.fallSpeed * multiplier;
-  }
-
-  private resolveCollectorSpeedMultiplier(snapshot: GameStateSnapshot): number {
-    return this.isPowerUpActive(snapshot.powerUps, "lightning")
-      ? POWER_UP_SPEED_MULTIPLIER
-      : 1;
-  }
-
-  private isPowerUpActive(powerUps: PowerUpStatus[], id: PowerUpId): boolean {
-    return powerUps.some((powerUp) => powerUp.id === id);
   }
 
   private syncToState(snapshot: GameStateSnapshot): void {
@@ -761,10 +768,14 @@ export class GameEngine implements BaseEngine {
       return;
     }
 
-    const normalizedType = this.resolveWasteFromKey(event);
-    if (normalizedType) {
-      const nextState = this.bridge.onSelectWasteType(normalizedType);
-      this.collector.applySelectedType(nextState.selectedType);
+    if (code === "ArrowUp" || key.toLowerCase() === "w") {
+      this.keyboardUpPressed = true;
+      event.preventDefault();
+      return;
+    }
+
+    if (code === "ArrowDown" || key.toLowerCase() === "s") {
+      this.keyboardDownPressed = true;
       event.preventDefault();
     }
   }
@@ -781,48 +792,54 @@ export class GameEngine implements BaseEngine {
     if (code === "ArrowRight" || key.toLowerCase() === "d") {
       this.keyboardRightPressed = false;
       event.preventDefault();
+      return;
     }
-  }
 
-  private resolveWasteFromKey(event: KeyboardEvent): WasteTypeId | null {
-    const key = event.key;
+    if (code === "ArrowUp" || key.toLowerCase() === "w") {
+      this.keyboardUpPressed = false;
+      event.preventDefault();
+      return;
+    }
 
-    if (key === "1") return "plastic";
-    if (key === "2") return "paper";
-    if (key === "3") return "glass";
-    if (key === "4") return "organic";
-
-    if (event.code === "Numpad1") return "plastic";
-    if (event.code === "Numpad2") return "paper";
-    if (event.code === "Numpad3") return "glass";
-    if (event.code === "Numpad4") return "organic";
-
-    return null;
+    if (code === "ArrowDown" || key.toLowerCase() === "s") {
+      this.keyboardDownPressed = false;
+      event.preventDefault();
+    }
   }
 
   private handlePointerDown(event: PointerEvent): void {
     this.touchTrackingActive = true;
     this.touchLastX = event.clientX;
+    this.touchLastY = event.clientY;
   }
 
   private handlePointerMove(event: PointerEvent): void {
-    if (!this.touchTrackingActive) {
-      return;
-    }
+    if (!this.touchTrackingActive) return;
 
     const deltaX = event.clientX - this.touchLastX;
-    if (Math.abs(deltaX) < 6) {
-      return;
+    const deltaY = event.clientY - this.touchLastY;
+
+    if (Math.abs(deltaX) >= 6) {
+      this.touchDirectionX = deltaX > 0 ? 1 : -1;
+      this.touchDirectionMs = 120;
+      this.touchLastX = event.clientX;
+    } else {
+      this.touchDirectionX = 0;
     }
 
-    this.touchDirection = deltaX > 0 ? 1 : -1;
-    this.touchDirectionMs = 120;
-    this.touchLastX = event.clientX;
+    if (Math.abs(deltaY) >= 6) {
+      this.touchDirectionY = deltaY > 0 ? 1 : -1;
+      this.touchDirectionMs = 120;
+      this.touchLastY = event.clientY;
+    } else {
+      this.touchDirectionY = 0;
+    }
   }
 
   private handlePointerUp(): void {
     this.touchTrackingActive = false;
-    this.touchDirection = 0;
+    this.touchDirectionX = 0;
+    this.touchDirectionY = 0;
     this.touchDirectionMs = 0;
   }
 }

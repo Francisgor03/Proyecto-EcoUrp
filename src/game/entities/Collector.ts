@@ -61,13 +61,7 @@ export class Collector extends Container {
     if (this.is2D && options.ecoVillaCollectorTexture) {
       this.sprite = new Sprite(options.ecoVillaCollectorTexture);
       this.sprite.anchor.set(0.5);
-      this.sprite.scale.set(this.baseScale * 0.45);
-
-      this.binSprite = new Sprite(this.textures[options.selectedType]);
-      this.binSprite.anchor.set(0.5);
-      this.binSprite.scale.set(this.baseScale * 0.45);
-      // Position the bin sprite slightly to the side/front of Mati on the raft
-      this.binSprite.position.set(35, 5);
+      this.sprite.scale.set(this.baseScale * 0.28);
     } else {
       this.sprite = new Sprite(this.textures[options.selectedType]);
       this.sprite.anchor.set(0.5);
@@ -122,8 +116,10 @@ export class Collector extends Container {
 
   public applySelectedType(type: WasteTypeId): void {
     this.selectedType = type;
-    if (this.is2D && this.binSprite) {
-      this.binSprite.texture = this.textures[type];
+    if (this.is2D) {
+      if (this.binSprite) {
+        this.binSprite.texture = this.textures[type];
+      }
     } else {
       this.sprite.texture = this.textures[type];
     }
@@ -159,15 +155,18 @@ export class Collector extends Container {
     const targetScaleX = this.baseScale * (moving ? 1.14 : 1);
     const targetScaleY = this.baseScale * (moving ? 0.88 : 1);
 
-    if (this.is2D && this.binSprite) {
-      this.sprite.scale.x += (targetScaleX * 0.45 - this.sprite.scale.x) * 0.22;
-      this.sprite.scale.y += (targetScaleY * 0.45 - this.sprite.scale.y) * 0.22;
+    const isVilla = this.is2D;
+    const villaMult = isVilla ? 0.28 : 1.0;
+
+    if (isVilla && this.binSprite) {
+      this.sprite.scale.x += (targetScaleX * 0.28 - this.sprite.scale.x) * 0.22;
+      this.sprite.scale.y += (targetScaleY * 0.28 - this.sprite.scale.y) * 0.22;
       
-      this.binSprite.scale.x += (targetScaleX * 0.45 - this.binSprite.scale.x) * 0.22;
-      this.binSprite.scale.y += (targetScaleY * 0.45 - this.binSprite.scale.y) * 0.22;
+      this.binSprite.scale.x += (targetScaleX * 0.28 - this.binSprite.scale.x) * 0.22;
+      this.binSprite.scale.y += (targetScaleY * 0.28 - this.binSprite.scale.y) * 0.22;
     } else {
-      this.sprite.scale.x += (targetScaleX - this.sprite.scale.x) * 0.22;
-      this.sprite.scale.y += (targetScaleY - this.sprite.scale.y) * 0.22;
+      this.sprite.scale.x += (targetScaleX * villaMult - this.sprite.scale.x) * 0.22;
+      this.sprite.scale.y += (targetScaleY * villaMult - this.sprite.scale.y) * 0.22;
     }
 
     const targetRotation = this.moveDirectionX * 0.06;
@@ -184,7 +183,8 @@ export class Collector extends Container {
   }
 
   public getCollisionRadius(): number {
-    return Math.max(30, this.width * 0.24);
+    const minRadius = this.is2D ? 18 : 30;
+    return Math.max(minRadius, this.width * 0.24);
   }
 
   public getIs2D(): boolean {

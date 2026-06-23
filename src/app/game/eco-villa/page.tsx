@@ -315,8 +315,9 @@ export default function EcoVillaPage() {
                     Eco-Villa
                   </h2>
                   <p className="mt-3 text-center text-sm text-cyan-200/80">
-                    Navega en tu balsa de totora por los canales y atrapa los
-                    residuos antes de que lleguen a los nidos de las aves.
+                    Navega en tu balsa de totora y recoge los residuos flotantes antes de que
+                    lleguen a los nidos de las aves (extremo izquierdo). ¡Esquiva los troncos
+                    y ten cuidado con las manchas de aceite!
                   </p>
 
                   {/* Controls */}
@@ -351,8 +352,7 @@ export default function EcoVillaPage() {
                       </div>
                     </div>
                     <p className="mt-3 text-[11px] text-cyan-300/60">
-                      📱 Mobile: arrastra el dedo horizontalmente para mover la
-                      balsa.
+                      📱 Mobile: arrastra el dedo para mover la balsa en cualquier dirección.
                     </p>
                   </div>
 
@@ -360,8 +360,8 @@ export default function EcoVillaPage() {
                   <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-950/40 p-3">
                     <span className="mt-0.5 text-lg">⚠️</span>
                     <p className="text-xs text-red-300/90">
-                      Si un residuo cruza el borde derecho, llegó a los nidos
-                      de las aves y <strong>perderás una vida</strong>.
+                      Si un residuo cruza el borde izquierdo, llegará a los nidos
+                      de las aves y <strong>perderás una vida</strong>. ¡Esquiva los troncos 🪵 y rescata a las aves 🕊️!
                     </p>
                   </div>
 

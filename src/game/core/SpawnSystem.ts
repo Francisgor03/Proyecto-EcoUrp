@@ -99,9 +99,9 @@ export class SpawnSystem {
     let pos: SpawnPosition;
 
     if (this.horizontal) {
-      // Eco-Villa: spawn en borde izquierdo, altura aleatoria en zona navegable.
+      // Eco-Villa: spawn en borde derecho, altura aleatoria en zona navegable.
       const y = randomBetween(this.spawnMinY, this.spawnMaxY);
-      pos = { x: -80, y };
+      pos = { x: this.spawnMaxX + 80, y };
     } else {
       // Eco-Catch: spawn fuera del canvas por arriba, x aleatorio.
       const x = randomInt(this.spawnMinX, this.spawnMaxX);

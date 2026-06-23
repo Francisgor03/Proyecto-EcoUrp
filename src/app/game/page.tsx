@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useAuth } from "@/components/auth/AuthProvider";
+import ecoCatchIconImg from "@/assets/images/Icono Eco-Catch.png";
+import ecoVillaIconImg from "@/assets/images/Icono Eco-Villa.png";
 
 // ── Animated card wrapper ────────────────────────────────────────────────────
 function GameCard({
@@ -243,9 +246,16 @@ export default function GameSelectorPage() {
               />
 
               {/* Icon */}
-              <div className="absolute inset-0 flex items-center justify-center p-8">
-                <div className="h-36 w-36 drop-shadow-lg sm:h-44 sm:w-44">
-                  <EcoCatchIcon />
+              <div className="absolute inset-0 flex items-center justify-center p-2">
+                <div className="relative h-48 w-48 drop-shadow-lg sm:h-56 sm:w-56">
+                  <Image
+                    src={ecoCatchIconImg}
+                    alt="Icono Eco-Catch"
+                    fill
+                    sizes="(max-width: 640px) 192px, 224px"
+                    className="object-contain"
+                    priority
+                  />
                 </div>
               </div>
 
@@ -301,35 +311,42 @@ export default function GameSelectorPage() {
           {/* ── Card 2: Eco-Villa ── */}
           <GameCard href="/game/eco-villa" delay={0.2}>
             {/* Illustration area */}
-            <div className="relative h-52 overflow-hidden bg-gradient-to-br from-cyan-100 via-sky-50 to-teal-100 sm:h-60">
+            <div className="relative h-52 overflow-hidden bg-gradient-to-br from-eco-emerald-100 via-eco-lime-50 to-eco-emerald-200 sm:h-60">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-                className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-cyan-300/20"
+                className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-eco-emerald-300/20"
               />
               <motion.div
                 animate={{ rotate: -360 }}
                 transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                className="absolute -bottom-10 -left-6 h-36 w-36 rounded-full bg-teal-300/25"
+                className="absolute -bottom-10 -left-6 h-36 w-36 rounded-full bg-eco-lime-300/25"
               />
 
               {/* Water wave animation */}
               <motion.div
                 animate={{ x: [0, 10, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-r from-cyan-300/40 via-sky-200/50 to-cyan-300/40 blur-sm"
+                className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-r from-eco-emerald-300/35 via-eco-lime-200/40 to-eco-emerald-300/35 blur-sm"
               />
 
               {/* Icon */}
-              <div className="absolute inset-0 flex items-center justify-center p-8">
-                <div className="h-36 w-36 drop-shadow-lg sm:h-44 sm:w-44">
-                  <EcoVillaIcon />
+              <div className="absolute inset-0 flex items-center justify-center p-2">
+                <div className="relative h-48 w-48 drop-shadow-lg sm:h-56 sm:w-56">
+                  <Image
+                    src={ecoVillaIconImg}
+                    alt="Icono Eco-Villa"
+                    fill
+                    sizes="(max-width: 640px) 192px, 224px"
+                    className="object-contain"
+                    priority
+                  />
                 </div>
               </div>
 
               {/* Badge */}
-              <span className="absolute left-4 top-4 rounded-full bg-sky-500/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow">
-                Próximamente
+              <span className="absolute left-4 top-4 rounded-full bg-eco-emerald-500/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow">
+                Disponible
               </span>
             </div>
 
@@ -337,7 +354,7 @@ export default function GameSelectorPage() {
             <div className="flex flex-1 flex-col p-5 sm:p-6">
               <div className="mb-1 flex items-center gap-2">
                 {/* Wave icon */}
-                <svg className="h-4 w-4 text-cyan-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="h-4 w-4 text-eco-emerald-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17 8C8 10 5.9 16.17 3.82 21H5.71C6.66 19.07 7.96 17.2 10 16c3.93-2.14 7.38-.77 9.31-.16C20.68 16.22 21 16 21 16s-1.7-5.19-4-8z" />
                 </svg>
                 <h2 className="text-xl font-black text-foreground">Eco-Villa</h2>
@@ -354,7 +371,7 @@ export default function GameSelectorPage() {
                 {["Navegación", "Ecosistemas", "Pantanos de Villa"].map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-0.5 text-[11px] font-semibold text-cyan-700"
+                    className="rounded-full border border-eco-emerald-200 bg-eco-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-eco-emerald-700"
                   >
                     {tag}
                   </span>
@@ -365,7 +382,7 @@ export default function GameSelectorPage() {
                 <Link
                   href="/game/eco-villa"
                   id="play-eco-villa-btn"
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-teal-500 px-5 py-3 text-sm font-bold text-white shadow-md shadow-cyan-500/30 transition-all hover:brightness-110 hover:shadow-lg active:scale-95"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-md shadow-eco-emerald-500/30 transition-all hover:brightness-110 hover:shadow-lg active:scale-95"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 5v14l11-7z" />

@@ -168,38 +168,40 @@ export default function GameUI({
           </div>
         </div>
 
-        <div className="pointer-events-auto grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3" data-tutorial="tutorial-waste-selector">
-          {WASTE_TYPES.map((waste) => {
-            const selected = state.selectedType === waste.id;
-            const buttonStyle = {
-              backgroundColor: waste.colorHex,
-              backgroundImage: `linear-gradient(160deg, ${waste.colorHex} 0%, ${waste.colorHex} 58%, rgba(255, 255, 255, 0.22) 100%)`,
-            };
+        {state.mode !== "eco-villa" && (
+          <div className="pointer-events-auto grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3" data-tutorial="tutorial-waste-selector">
+            {WASTE_TYPES.map((waste) => {
+              const selected = state.selectedType === waste.id;
+              const buttonStyle = {
+                backgroundColor: waste.colorHex,
+                backgroundImage: `linear-gradient(160deg, ${waste.colorHex} 0%, ${waste.colorHex} 58%, rgba(255, 255, 255, 0.22) 100%)`,
+              };
 
-            return (
-              <AnimatedButton
-                key={waste.id}
-                type="button"
-                onClick={() => onSelectType(waste.id)}
-                className={`group relative overflow-hidden rounded-2xl border border-white/35 px-3 py-3 text-left shadow-lg transition-all sm:px-4 sm:py-4 ${
-                  selected
-                    ? "ring-3 ring-white/80 ring-offset-2 ring-offset-transparent scale-[1.03] shadow-2xl"
-                    : "opacity-90 hover:opacity-100 hover:shadow-xl"
-                }`}
-                style={buttonStyle}
-                aria-pressed={selected}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-white/35 via-white/0 to-black/20 opacity-80" />
-                <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-white/25 blur-2xl" />
-                <div className="relative z-10 flex h-full items-center justify-center text-center">
-                  <span className="text-sm font-extrabold text-white drop-shadow-sm sm:text-base">
-                    {waste.label}
-                  </span>
-                </div>
-              </AnimatedButton>
-            );
-          })}
-        </div>
+              return (
+                <AnimatedButton
+                  key={waste.id}
+                  type="button"
+                  onClick={() => onSelectType(waste.id)}
+                  className={`group relative overflow-hidden rounded-2xl border border-white/35 px-3 py-3 text-left shadow-lg transition-all sm:px-4 sm:py-4 ${
+                    selected
+                      ? "ring-3 ring-white/80 ring-offset-2 ring-offset-transparent scale-[1.03] shadow-2xl"
+                      : "opacity-90 hover:opacity-100 hover:shadow-xl"
+                  }`}
+                  style={buttonStyle}
+                  aria-pressed={selected}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/35 via-white/0 to-black/20 opacity-80" />
+                  <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-white/25 blur-2xl" />
+                  <div className="relative z-10 flex h-full items-center justify-center text-center">
+                    <span className="text-sm font-extrabold text-white drop-shadow-sm sm:text-base">
+                      {waste.label}
+                    </span>
+                  </div>
+                </AnimatedButton>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <AnimatePresence>

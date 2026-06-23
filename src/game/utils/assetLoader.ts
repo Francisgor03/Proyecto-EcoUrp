@@ -72,6 +72,9 @@ export interface LoadedGameAssets {
     backgroundNear: Texture;
     collector: Texture;
     wastes: Record<WasteTypeId, Texture[]>;
+    oilSpills: Texture[];
+    birdRescue: Texture;
+    obstacleLog: Texture;
   };
 }
 
@@ -174,6 +177,24 @@ function createParticleSvg(): string {
   `);
 }
 
+function createBirdRescueSvg(): string {
+  return svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+      <circle cx="48" cy="48" r="40" fill="#a7f3d0" stroke="#059669" stroke-width="4"/>
+      <text x="48" y="62" text-anchor="middle" font-size="48">🕊️</text>
+    </svg>
+  `);
+}
+
+function createObstacleLogSvg(): string {
+  return svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+      <circle cx="48" cy="48" r="40" fill="#fed7aa" stroke="#c2410c" stroke-width="4"/>
+      <text x="48" y="64" text-anchor="middle" font-size="48">🪵</text>
+    </svg>
+  `);
+}
+
 function registerAsset(alias: string, src: string): void {
   try {
     Assets.add({ alias, src });
@@ -233,6 +254,9 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
       aceite3: "ev-oil-3",
     } as const;
 
+    const birdRescueSvg = createBirdRescueSvg();
+    const obstacleLogSvg = createObstacleLogSvg();
+
     registerAsset(ASSET_KEYS.backgroundFar, resolveImageSource(datosImage));
     registerAsset(ASSET_KEYS.backgroundMid, resolveImageSource(heroImage));
     registerAsset(ASSET_KEYS.backgroundNear, resolveImageSource(fondoPruebaImage));
@@ -250,6 +274,8 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
     registerAsset(ecoVillaKeys.aceite1, resolveImageSource(aceiteEcoVilla1Image));
     registerAsset(ecoVillaKeys.aceite2, resolveImageSource(aceiteEcoVilla2Image));
     registerAsset(ecoVillaKeys.aceite3, resolveImageSource(aceiteEcoVilla3Image));
+    registerAsset("ev-bird-rescue", birdRescueSvg);
+    registerAsset("ev-obstacle-log", obstacleLogSvg);
 
     for (const powerUpId of POWER_UP_IDS) {
       const definition = getPowerUpDefinition(powerUpId);
@@ -264,6 +290,8 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
       ASSET_KEYS.particle,
       ...Object.values(POWER_UP_ASSET_KEYS),
       ...Object.values(ecoVillaKeys),
+      "ev-bird-rescue",
+      "ev-obstacle-log",
     ]);
 
     const wasteTextures = {} as Record<WasteTypeId, Texture[]>;
@@ -311,13 +339,15 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
           plastic: [getTexture(ecoVillaKeys.residuo1)],
           paper: [getTexture(ecoVillaKeys.residuo2)],
           glass: [getTexture(ecoVillaKeys.residuo3)],
-          organic: [
-            getTexture(ecoVillaKeys.residuo4),
-            getTexture(ecoVillaKeys.aceite1),
-            getTexture(ecoVillaKeys.aceite2),
-            getTexture(ecoVillaKeys.aceite3),
-          ],
+          organic: [getTexture(ecoVillaKeys.residuo4)],
         },
+        oilSpills: [
+          getTexture(ecoVillaKeys.aceite1),
+          getTexture(ecoVillaKeys.aceite2),
+          getTexture(ecoVillaKeys.aceite3),
+        ],
+        birdRescue: getTexture("ev-bird-rescue"),
+        obstacleLog: getTexture("ev-obstacle-log"),
       },
     };
   })();
