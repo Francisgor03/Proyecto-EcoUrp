@@ -31,6 +31,7 @@ import aceiteEcoVilla1Image from "@/assets/images/eco-villa/aceite eco-villa1.pn
 import aceiteEcoVilla2Image from "@/assets/images/eco-villa/aceite eco-villa2.png";
 import aceiteEcoVilla3Image from "@/assets/images/eco-villa/aceite eco-villa3.png";
 import fondo2EcoVillaImage from "@/assets/images/eco-villa/fondo 2 eco-villa.png";
+import troncoEcoVillaImage from "@/assets/images/eco-villa/Tronco eco-villa.png";
 
 import { WASTE_IDS, getWasteType, type WasteTypeId } from "@/game/config/wasteTypes";
 import {
@@ -186,14 +187,7 @@ function createBirdRescueSvg(): string {
   `);
 }
 
-function createObstacleLogSvg(): string {
-  return svgToDataUri(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
-      <circle cx="48" cy="48" r="40" fill="#fed7aa" stroke="#c2410c" stroke-width="4"/>
-      <text x="48" y="64" text-anchor="middle" font-size="48">🪵</text>
-    </svg>
-  `);
-}
+
 
 function registerAsset(alias: string, src: string): void {
   try {
@@ -255,7 +249,6 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
     } as const;
 
     const birdRescueSvg = createBirdRescueSvg();
-    const obstacleLogSvg = createObstacleLogSvg();
 
     registerAsset(ASSET_KEYS.backgroundFar, resolveImageSource(datosImage));
     registerAsset(ASSET_KEYS.backgroundMid, resolveImageSource(heroImage));
@@ -275,7 +268,7 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
     registerAsset(ecoVillaKeys.aceite2, resolveImageSource(aceiteEcoVilla2Image));
     registerAsset(ecoVillaKeys.aceite3, resolveImageSource(aceiteEcoVilla3Image));
     registerAsset("ev-bird-rescue", birdRescueSvg);
-    registerAsset("ev-obstacle-log", obstacleLogSvg);
+    registerAsset("ev-obstacle-log", resolveImageSource(troncoEcoVillaImage));
 
     for (const powerUpId of POWER_UP_IDS) {
       const definition = getPowerUpDefinition(powerUpId);
