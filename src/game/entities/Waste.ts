@@ -52,7 +52,7 @@ export class Waste extends Container {
     this.isBirdRescue = options.isBirdRescue ?? false;
     this._fallSpeed = options.fallSpeed;
     if (this.isObstacle) {
-      this._fallSpeed = 18 * (options.fallSpeed / 200);
+      this._fallSpeed = 45 * (options.fallSpeed / 200);
     }
 
     // En modo vertical originPerp es X; en horizontal es Y.
@@ -87,8 +87,8 @@ export class Waste extends Container {
 
   public setFallSpeed(nextSpeed: number): void {
     if (this.isObstacle) {
-      // La madera se desplaza más lento, coordinada con la velocidad del fondo (cerca de 18 px/s).
-      this._fallSpeed = 18 * (nextSpeed / 200);
+      // La madera se desplaza más lento, coordinada con la velocidad del fondo (cerca de 45 px/s).
+      this._fallSpeed = 45 * (nextSpeed / 200);
     } else {
       this._fallSpeed = Math.max(40, nextSpeed);
     }

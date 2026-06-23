@@ -111,13 +111,13 @@ export class EcoVillaEngine implements BaseEngine {
     const playBounds = this.getPlayBounds();
     const waterBounds = this.getWaterBounds();
 
-    // En Eco-Villa el recolector se mueve con la balsa en 2D
+    // En Eco-Villa el recolector se mueve con la balsa en 2D (sin límites horizontales)
     this.collector = new Collector({
       textures: this.assets.collectors,
       startX: this.width / 4, // Empezar en la parte izquierda
       y: this.height / 2,
-      minX: playBounds.minX,
-      maxX: playBounds.maxX,
+      minX: 0,
+      maxX: this.width,
       moveSpeed: 380,
       selectedType: initialState.selectedType,
       baseScale: this.resolveCollectorScale(),
@@ -237,8 +237,8 @@ export class EcoVillaEngine implements BaseEngine {
       waterBounds.maxY,
     );
     this.collector.setBounds(
-      playBounds.minX,
-      playBounds.maxX,
+      0,
+      this.width,
       waterBounds.minY,
       waterBounds.maxY,
     );
