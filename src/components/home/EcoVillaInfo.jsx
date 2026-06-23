@@ -15,6 +15,9 @@ export default function EcoVillaInfo() {
       badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
       glowColor: "bg-amber-500/5",
       statColor: "text-amber-600 dark:text-amber-400",
+      borderColor: "border-amber-500/30 ring-amber-500/20",
+      textColor: "text-amber-600 dark:text-amber-400",
+      indicatorColor: "bg-amber-500",
       description:
         "Los canales y lagunas de los Pantanos de Villa en Chorrillos (Lima, Perú) son refugios críticos de biodiversidad, albergando decenas de especies de plantas, peces y reptiles nativos. Sin embargo, sufren por la constante acumulación de basura y residuos plásticos de un solo uso arrastrados por canales alimentadores urbanos. Esta contaminación bloquea el ingreso de luz solar, reduce el oxígeno en el agua y asfixia el ecosistema acuático, poniendo en grave riesgo a la flora local y a cientos de especies de aves migratorias (que viajan desde Norteamérica) y que dependen de estas aguas para alimentarse y descansar.",
       stats: [
@@ -28,9 +31,12 @@ export default function EcoVillaInfo() {
       subtitle: "Conservación Activa",
       badge: "Conservación Activa",
       icon: "🛶",
-      badgeClass: "bg-eco-emerald-500/10 text-eco-emerald-600 dark:text-eco-emerald-400 border-eco-emerald-500/20",
+      badgeClass: "bg-eco-emerald-500/10 text-eco-emerald-600 border-eco-emerald-500/20",
       glowColor: "bg-eco-emerald-500/5",
-      statColor: "text-eco-emerald-600 dark:text-eco-emerald-400",
+      statColor: "text-eco-emerald-600",
+      borderColor: "border-eco-emerald-500/30 ring-eco-emerald-500/20",
+      textColor: "text-eco-emerald-600",
+      indicatorColor: "bg-eco-emerald-500",
       description:
         "Inspirado en la conservación activa, Eco-Villa te pone al mando de un tradicional bote de totora, un patrimonio cultural peruano construido con fibras naturales del humedal. Tu misión de limpieza consiste en navegar y recolectar plásticos, vidrios y papeles antes de que alcancen las zonas de anidación. Esta experiencia gamificada busca concientizar a los estudiantes sobre el impacto real de los microplásticos y demostrar que las acciones directas de limpieza, combinadas con hábitos de separación en origen, son esenciales para recuperar nuestros ecosistemas y proteger la biodiversidad de Lima.",
       stats: [
@@ -51,7 +57,8 @@ export default function EcoVillaInfo() {
       <div className="mx-auto max-w-6xl">
         {/* Title Block */}
         <div className="mb-12 text-center">
-          <p className="mb-3 inline-flex rounded-full border border-eco-emerald-200 bg-eco-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-eco-emerald-800 shadow-sm dark:border-eco-emerald-900/40 dark:bg-eco-emerald-950/40 dark:text-eco-emerald-300 sm:mb-4 sm:px-4 sm:text-xs">
+          {/* Top Badge: Uses auto-inverting eco-emerald scale without manual dark overrides */}
+          <p className="mb-3 inline-flex rounded-full border border-eco-emerald-200/50 bg-eco-emerald-100/50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-eco-emerald-700 shadow-sm sm:mb-4 sm:px-4 sm:text-xs">
             Humedales de Lima
           </p>
           <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl lg:text-5xl">
@@ -66,7 +73,7 @@ export default function EcoVillaInfo() {
         <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
           {/* Left Column: Interactive Nav List */}
           <div className="flex flex-row justify-center gap-2 lg:col-span-4 lg:flex-col lg:justify-start lg:gap-3">
-            {(Object.keys(tabConfig)).map((tabKey) => {
+            {Object.keys(tabConfig).map((tabKey) => {
               const tab = tabConfig[tabKey];
               const isActive = activeTab === tabKey;
               return (
@@ -75,7 +82,7 @@ export default function EcoVillaInfo() {
                   onClick={() => setActiveTab(tabKey)}
                   className={`relative flex w-full max-w-xs items-center gap-3 rounded-2xl border p-4 text-left transition-all duration-300 sm:max-w-none ${
                     isActive
-                      ? "border-eco-emerald-500/30 bg-card shadow-md shadow-eco-emerald-950/5 ring-1 ring-eco-emerald-500/20"
+                      ? `${tab.borderColor} bg-card shadow-md ring-1`
                       : "border-border bg-card/40 hover:bg-card/85"
                   }`}
                 >
@@ -83,7 +90,7 @@ export default function EcoVillaInfo() {
                   {isActive && (
                     <motion.div
                       layoutId="activeTabIndicator"
-                      className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl bg-eco-emerald-500"
+                      className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl ${tab.indicatorColor}`}
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -91,7 +98,7 @@ export default function EcoVillaInfo() {
                     {tab.icon}
                   </span>
                   <div className="min-w-0">
-                    <p className={`text-xs font-bold uppercase tracking-wider ${isActive ? "text-eco-emerald-600 dark:text-eco-emerald-400" : "text-muted-foreground"}`}>
+                    <p className={`text-xs font-bold uppercase tracking-wider ${isActive ? tab.textColor : "text-muted-foreground"}`}>
                       {tab.subtitle}
                     </p>
                     <p className="truncate text-sm font-semibold text-foreground sm:text-base">
@@ -103,7 +110,7 @@ export default function EcoVillaInfo() {
             })}
           </div>
 
-          {/* Right Column: Dynamic Panel with Framer Motion */}
+          {/* Right Column: Dynamic Panel */}
           <div className="lg:col-span-8">
             <AnimatePresence mode="wait">
               <motion.div
