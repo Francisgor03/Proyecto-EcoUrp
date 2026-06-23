@@ -436,10 +436,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
-  const [profilePromptOpen, setProfilePromptOpen] = useState(false);
-  const [profileName, setProfileName] = useState("");
-  const [profileSaving, setProfileSaving] = useState(false);
-  const [pendingUserId, setPendingUserId] = useState("");
+
 
   const isReset = mode === "reset";
   const isSignup = mode === "signup";
@@ -491,14 +488,7 @@ export default function LoginPage() {
     }
   }
 
-  function closeProfilePrompt() {
-    setProfilePromptOpen(false);
-    setProfileName("");
-    setPendingUserId("");
-  }
-
   function completeSignupFlow() {
-    closeProfilePrompt();
     setMessage("Cuenta creada. Revisa tu correo para confirmar el acceso.");
     setMode("login");
     setPassword("");
@@ -620,13 +610,7 @@ export default function LoginPage() {
         }
 
         saveCooldown("signup", emailTrim);
-        if (data?.user?.id) {
-          setPendingUserId(data.user.id);
-          setProfilePromptOpen(true);
-        } else {
-          setMessage("Cuenta creada. Revisa tu correo para confirmar el acceso.");
-          setMode("login");
-        }
+        completeSignupFlow();
         return;
       }
 
@@ -907,77 +891,7 @@ export default function LoginPage() {
         </main>
       </div>
 
-      {profilePromptOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">Elige tu nombre de perfil</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Este nombre aparecera en la plataforma.
-                </p>
-              </div>
-              <button
-                type="button"
-                aria-label="Cerrar"
-                onClick={completeSignupFlow}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-primary transition hover:bg-surface-raised"
-              >
-                x
-              </button>
-            </div>
 
-            <label
-              htmlFor="profileName"
-              className="mt-4 block text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-            >
-              Nombre para mostrar
-            </label>
-            <input
-              id="profileName"
-              type="text"
-              value={profileName}
-              onChange={(event) => setProfileName(event.target.value)}
-              placeholder="Ej: Ana, Equipo Verde"
-              className="mt-2 w-full rounded-2xl border border-border bg-surface-raised px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-            />
-
-            <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={completeSignupFlow}
-                className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-raised"
-              >
-                Omitir
-              </button>
-              <button
-                type="button"
-                disabled={profileSaving}
-                onClick={async () => {
-                  if (!supabase || !pendingUserId) return;
-
-                  setProfileSaving(true);
-                  const { error: profileError } = await supabase.from("profiles").upsert({
-                    id: pendingUserId,
-                    display_name: profileName.trim() || null,
-                  });
-                  setProfileSaving(false);
-
-                  if (profileError) {
-                    setServerError("No se pudo guardar el nombre de perfil.");
-                    return;
-                  }
-
-                  completeSignupFlow();
-                }}
-                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {profileSaving ? "Guardando..." : "Guardar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       <style jsx>{`
         .blob-float {
