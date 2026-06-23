@@ -600,8 +600,7 @@ export default function EcoCatchPage() {
                   </h2>
                   <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
                     Controles: mover con flechas o A/D, cambiar tipo con teclas
-                    1-4 o botones en pantalla. En mobile, arrastra
-                    horizontalmente para mover el tacho.
+                    1-4 o botones en pantalla.
                   </p>
 
                   <div

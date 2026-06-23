@@ -351,9 +351,6 @@ export default function EcoVillaPage() {
                         <span className="text-xs text-cyan-200/70">Abajo</span>
                       </div>
                     </div>
-                    <p className="mt-3 text-[11px] text-cyan-300/60">
-                      📱 Mobile: arrastra el dedo para mover la balsa en cualquier dirección.
-                    </p>
                   </div>
 
                   {/* Mission reminder */}
