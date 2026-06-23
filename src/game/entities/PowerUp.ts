@@ -8,6 +8,7 @@ export interface PowerUpOptions {
   x: number;
   y: number;
   fallSpeed: number;
+  horizontal?: boolean;
 }
 
 /**
@@ -16,6 +17,7 @@ export interface PowerUpOptions {
 export class PowerUp extends Container {
   public readonly id: string;
   public readonly type: PowerUpId;
+  public readonly horizontal: boolean;
 
   private readonly sprite: Sprite;
   private readonly wobbleAmplitude: number;
@@ -24,7 +26,7 @@ export class PowerUp extends Container {
   private readonly phaseOffset: number;
 
   private elapsedMs = 0;
-  private originX: number;
+  private originPerp: number;
   private _fallSpeed: number;
 
   public constructor(options: PowerUpOptions) {
@@ -32,7 +34,8 @@ export class PowerUp extends Container {
 
     this.id = options.id;
     this.type = options.type;
-    this.originX = options.x;
+    this.horizontal = options.horizontal ?? false;
+    this.originPerp = this.horizontal ? options.y : options.x;
     this._fallSpeed = options.fallSpeed;
 
     const availableTextures = options.textures.length > 0 ? options.textures : [Texture.WHITE];
@@ -59,17 +62,24 @@ export class PowerUp extends Container {
     this._fallSpeed = Math.max(40, nextSpeed);
   }
 
-  public shiftOrigin(deltaX: number): void {
-    this.originX += deltaX;
+  public shiftOrigin(deltaPerp: number): void {
+    this.originPerp += deltaPerp;
   }
 
   public update(deltaMs: number): void {
     this.elapsedMs += deltaMs;
 
-    this.y += (this._fallSpeed * deltaMs) / 1000;
+    const wave = Math.sin(this.elapsedMs * this.wobbleFrequency + this.phaseOffset) * this.wobbleAmplitude;
 
-    const wobbleX = Math.sin(this.elapsedMs * this.wobbleFrequency + this.phaseOffset) * this.wobbleAmplitude;
-    this.x = this.originX + wobbleX;
+    if (this.horizontal) {
+      // Eco-Villa: avanza hacia la izquierda, ondula suavemente en Y.
+      this.x -= (this._fallSpeed * deltaMs) / 1000;
+      this.y = this.originPerp + wave;
+    } else {
+      // Eco-Catch: cae hacia abajo, wobble en X.
+      this.y += (this._fallSpeed * deltaMs) / 1000;
+      this.x = this.originPerp + wave;
+    }
 
     this.sprite.rotation += this.rotationSpeed * deltaMs;
 

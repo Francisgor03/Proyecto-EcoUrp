@@ -501,10 +501,11 @@ export class EcoVillaEngine implements BaseEngine {
   }
 
   private getWaterBounds(): { minY: number; maxY: number } {
-    const margin = this.height * 0.15;
+    // La zona superior de plantas ocupa aprox. el 35% de la pantalla.
+    // La zona inferior es navegable casi hasta el borde (8% de margen).
     return {
-      minY: margin,
-      maxY: this.height - margin,
+      minY: this.height * 0.35,
+      maxY: this.height - this.height * 0.08,
     };
   }
 
@@ -598,6 +599,7 @@ export class EcoVillaEngine implements BaseEngine {
       x: pos.x,
       y: pos.y,
       fallSpeed: this.currentDifficulty.fallSpeed,
+      horizontal: true,
     });
 
     this.spawnedItemCount += 1;
