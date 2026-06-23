@@ -3,6 +3,7 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 import { FaTiktok } from "react-icons/fa";
 import HomeCtas, { FooterAccessLink } from "@/components/home/HomeCtas";
 import SeparationSection from "@/components/home/SeparationSection";
+import EcoVillaInfo from "@/components/home/EcoVillaInfo";
 import heroImage from "@/assets/images/Hero.jpg";
 import datosImage from "@/assets/images/Datos.jpg";
 
@@ -117,6 +118,8 @@ export default function HomePage() {
             </ul>
           </div>
         </section>
+
+        <EcoVillaInfo />
 
         <SeparationSection />
       </main>
