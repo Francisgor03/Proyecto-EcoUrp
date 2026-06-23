@@ -1,6 +1,14 @@
-export const GAME_MODE_IDS = ["easy", "normal", "hard", "timed", "zen"] as const;
+export const GAME_MODE_IDS = ["easy", "normal", "hard", "timed", "zen", "eco-villa"] as const;
 
 export type GameModeId = (typeof GAME_MODE_IDS)[number];
+
+/**
+ * Indica si un modo usa mecánicas horizontales (Eco-Villa) en lugar
+ * de las verticales clásicas (Eco-Catch).
+ */
+export function isHorizontalMode(mode: GameModeId): boolean {
+  return mode === "eco-villa";
+}
 
 export interface GameModeConfig {
   id: GameModeId;
@@ -63,6 +71,17 @@ const GAME_MODE_CONFIG_MAP: Record<GameModeId, GameModeConfig> = {
     lives: Number.MAX_SAFE_INTEGER,
     timeLimitMs: null,
     infiniteLives: true,
+  },
+  "eco-villa": {
+    id: "eco-villa",
+    label: "Eco-Villa",
+    description: "Navega por los canales de los Pantanos de Villa en tu balsa de totora.",
+    spawnMs: 1900,
+    // En modo horizontal, fallSpeed se reutiliza como velocidad de drift (px/s).
+    fallSpeed: 200,
+    lives: 3,
+    timeLimitMs: null,
+    infiniteLives: false,
   },
 };
 

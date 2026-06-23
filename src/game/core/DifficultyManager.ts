@@ -37,6 +37,7 @@ export class DifficultyManager {
       hard: 0.5,
       timed: 0.42,
       zen: 0.18,
+      "eco-villa": 0.32,
     };
 
     const ramp = blendedProgress * rampCeilingByMode[this.baseMode.id];

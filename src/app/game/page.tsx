@@ -1,310 +1,143 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useAnimationControls, type MotionProps } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth/AuthProvider";
-import GameUI from "@/components/game/GameUI";
-import GameOverModal from "@/components/game/GameOverModal";
-import GameTutorialOverlay from "@/components/game/GameTutorialOverlay";
-import TutorialCountdownOverlay from "@/components/game/TutorialCountdownOverlay";
-import PowerUpHUD from "@/components/game/PowerUpHUD";
-import { GAME_MODES, type GameModeId } from "@/game/config/gameModes";
-import { getPowerUpDefinition, POWER_UP_IDS } from "@/game/config/powerUps";
-import { GAME_TUTORIAL_STEPS, MENU_TUTORIAL_STEPS } from "@/game/tutorialSteps";
-import { buildWrongBinFeedback, useGameState } from "@/game/useGameState";
-import { useGameTutorial } from "@/hooks/useGameTutorial";
 
-const GameCanvas = dynamic(() => import("@/components/game/GameCanvas"), {
-  ssr: false,
-});
-
-type AnimatedButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof MotionProps> &
-  MotionProps & {
-    children: ReactNode;
-  };
-
-function AnimatedButton({ children, className = "", ...props }: AnimatedButtonProps) {
+// ── Animated card wrapper ────────────────────────────────────────────────────
+function GameCard({
+  href,
+  delay = 0,
+  children,
+}: {
+  href: string;
+  delay?: number;
+  children: React.ReactNode;
+}) {
   return (
-    <motion.button
-      className={className}
-      whileHover={{ scale: 1.05, y: -2 }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-      {...props}
+    <motion.div
+      initial={{ opacity: 0, y: 32 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.52, ease: "easeOut", delay }}
+      whileHover={{ y: -6, scale: 1.015 }}
+      className="group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-xl shadow-eco-emerald-900/10 transition-shadow hover:shadow-2xl hover:shadow-eco-emerald-900/20"
     >
       {children}
-    </motion.button>
+    </motion.div>
   );
 }
 
-export default function GamePage() {
+// ── SVG icons ────────────────────────────────────────────────────────────────
+function EcoCatchIcon() {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      className="h-full w-full"
+      aria-hidden="true"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Campus sky */}
+      <rect width="64" height="64" rx="16" fill="#d1fae5" />
+      {/* Sun */}
+      <circle cx="50" cy="14" r="7" fill="#fde68a" />
+      {/* Building */}
+      <rect x="8" y="28" width="20" height="22" rx="2" fill="#6ee7b7" />
+      <rect x="12" y="32" width="4" height="5" rx="1" fill="#fff" />
+      <rect x="20" y="32" width="4" height="5" rx="1" fill="#fff" />
+      <rect x="14" y="40" width="8" height="10" rx="1" fill="#a7f3d0" />
+      {/* Tree */}
+      <ellipse cx="42" cy="32" rx="8" ry="9" fill="#34d399" />
+      <rect x="40" y="40" width="4" height="7" rx="1" fill="#065f46" />
+      {/* Recycling bin */}
+      <rect x="24" y="42" width="16" height="10" rx="2" fill="#10b981" />
+      {/* Recycle arrows */}
+      <path
+        d="M30 39l2-4 2 4"
+        stroke="#fff"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Falling waste */}
+      <rect x="20" y="20" width="6" height="6" rx="1" fill="#fca5a5" />
+      <rect x="36" y="14" width="5" height="5" rx="1" fill="#93c5fd" />
+    </svg>
+  );
+}
+
+function EcoVillaIcon() {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      className="h-full w-full"
+      aria-hidden="true"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Sky / water */}
+      <rect width="64" height="64" rx="16" fill="#cffafe" />
+      {/* Water */}
+      <rect x="0" y="38" width="64" height="26" rx="12" fill="#67e8f9" />
+      {/* Reeds / totora */}
+      <rect x="6" y="26" width="3" height="18" rx="1.5" fill="#4ade80" />
+      <ellipse cx="7.5" cy="25" rx="4" ry="2.5" fill="#22c55e" />
+      <rect x="55" y="22" width="3" height="22" rx="1.5" fill="#4ade80" />
+      <ellipse cx="56.5" cy="21" rx="4" ry="2.5" fill="#22c55e" />
+      {/* Raft (balsa) */}
+      <rect x="14" y="36" width="36" height="8" rx="4" fill="#a16207" />
+      <rect x="16" y="33" width="32" height="5" rx="2" fill="#ca8a04" />
+      {/* Bird */}
+      <path
+        d="M44 18 Q47 15 50 18"
+        stroke="#1e40af"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M38 22 Q41 19 44 22"
+        stroke="#1e40af"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Pollution bubble */}
+      <circle cx="48" cy="42" r="5" fill="#fca5a5" opacity="0.8" />
+      <text x="45.5" y="45" fontSize="6" fill="#dc2626" fontWeight="bold">
+        ✕
+      </text>
+      {/* Paddle */}
+      <rect x="30" y="30" width="2" height="12" rx="1" fill="#92400e" />
+      <ellipse cx="31" cy="29" rx="3" ry="2" fill="#b45309" />
+    </svg>
+  );
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
+export default function GameSelectorPage() {
   const router = useRouter();
   const { session, loading, isConfigured } = useAuth();
 
-  const { state, actions, bridge } = useGameState("normal");
-  const {
-    isOpen: isTutorialOpen,
-    stepIndex: tutorialStepIndex,
-    entryPoint: tutorialEntryPoint,
-    hasSeen: tutorialHasSeen,
-    ready: tutorialReady,
-    start: startTutorial,
-    next: nextTutorial,
-    prev: prevTutorial,
-    skip: skipTutorial,
-    finish: finishTutorial,
-  } = useGameTutorial();
-  const tutorialAutoStartRef = useRef(false);
-  const tutorialAdvanceRef = useRef(false);
-  const [tutorialProgress, setTutorialProgress] = useState({
-    modeSelected: false,
-    moved: false,
-    typeChanged: false,
-  });
-  const lastSelectedTypeRef = useRef(state.selectedType);
-  const [countdownValue, setCountdownValue] = useState<number | null>(null);
-  const isCountdownActive = countdownValue !== null;
-  const tutorialSteps =
-    tutorialEntryPoint === "menu"
-      ? MENU_TUTORIAL_STEPS.concat(GAME_TUTORIAL_STEPS)
-      : GAME_TUTORIAL_STEPS;
-  const activeTutorialStep = tutorialSteps[tutorialStepIndex];
-  const activeTutorialStepId = activeTutorialStep?.id;
-  const canTutorialPrev =
-    tutorialStepIndex > 0 &&
-    !(state.phase === "playing" && tutorialSteps[tutorialStepIndex - 1]?.phase === "menu");
-  const tutorialNextDisabled =
-    activeTutorialStepId === "menu-modes"
-      ? !tutorialProgress.modeSelected
-      : activeTutorialStepId === "menu-start"
-        ? true
-        : activeTutorialStepId === "game-controls"
-          ? !(tutorialProgress.moved && tutorialProgress.typeChanged)
-          : false;
-  const tutorialPowerUps = useMemo(() => {
-    return POWER_UP_IDS.map((id) => {
-      const definition = getPowerUpDefinition(id);
-      return {
-        id,
-        remainingMs: definition.durationMs,
-        durationMs: definition.durationMs,
-      };
-    });
-  }, []);
-  const emptyPowerUps = useMemo(() => [], []);
-  const tutorialFeedback = useMemo(() => buildWrongBinFeedback("plastic", "paper"), []);
-
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const viewportControls = useAnimationControls();
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const toggleFullscreen = useCallback(async () => {
-    const element = viewportRef.current;
-    if (!element) return;
-
-    try {
-      if (!document.fullscreenElement) {
-        await element.requestFullscreen();
-      } else {
-        await document.exitFullscreen();
-      }
-    } catch {
-      // Fullscreen not supported or denied
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
-
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && isConfigured && !session) {
       router.replace("/login?next=/game");
     }
   }, [isConfigured, loading, router, session]);
 
-  useEffect(() => {
-    viewportControls.set({ opacity: 0, y: 18 });
-    void viewportControls.start({
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.46, ease: "easeOut" },
-    });
-  }, [state.phase, viewportControls]);
-
-  useEffect(() => {
-    if (tutorialAutoStartRef.current) {
-      return;
-    }
-
-    if (!tutorialReady || tutorialHasSeen || isTutorialOpen) {
-      return;
-    }
-
-    if (state.phase !== "playing" || state.roundId < 1) {
-      return;
-    }
-
-    tutorialAutoStartRef.current = true;
-    startTutorial("auto");
-  }, [isTutorialOpen, startTutorial, state.phase, state.roundId, tutorialHasSeen, tutorialReady]);
-
-  useEffect(() => {
-    if (!isTutorialOpen) {
-      return;
-    }
-
-    setTutorialProgress({
-      modeSelected: false,
-      moved: false,
-      typeChanged: false,
-    });
-  }, [isTutorialOpen, tutorialEntryPoint]);
-
-  useEffect(() => {
-    if (!tutorialAdvanceRef.current || state.phase !== "playing") {
-      return;
-    }
-
-    if (!isTutorialOpen) {
-      tutorialAdvanceRef.current = false;
-      return;
-    }
-
-    tutorialAdvanceRef.current = false;
-    nextTutorial();
-  }, [isTutorialOpen, nextTutorial, state.phase]);
-
-  useEffect(() => {
-    const shouldBlockSpawns = (isTutorialOpen || isCountdownActive) && state.phase === "playing";
-    if (!shouldBlockSpawns) {
-      actions.setTutorialState(null);
-      return;
-    }
-
-    actions.setTutorialState({
-      blockSpawns: true,
-      freezeTimer: true,
-    });
-  }, [actions, isCountdownActive, isTutorialOpen, state.phase]);
-
-  useEffect(() => {
-    if (!isTutorialOpen || state.phase !== "playing") {
-      actions.setTutorialPowerUps(emptyPowerUps);
-      return;
-    }
-
-    if (activeTutorialStepId === "game-powerups") {
-      actions.setTutorialPowerUps(tutorialPowerUps);
-      return;
-    }
-
-    actions.setTutorialPowerUps(emptyPowerUps);
-  }, [actions, activeTutorialStepId, emptyPowerUps, isTutorialOpen, state.phase, tutorialPowerUps]);
-
-  useEffect(() => {
-    if (!isTutorialOpen || state.phase !== "playing") {
-      actions.setTutorialFeedback(null);
-      return;
-    }
-
-    if (activeTutorialStepId === "game-feedback") {
-      actions.setTutorialFeedback(tutorialFeedback);
-      return;
-    }
-
-    actions.setTutorialFeedback(null);
-  }, [actions, activeTutorialStepId, isTutorialOpen, state.phase, tutorialFeedback]);
-
-  useEffect(() => {
-    if (!isTutorialOpen || activeTutorialStepId !== "game-controls") {
-      lastSelectedTypeRef.current = state.selectedType;
-      return;
-    }
-
-    if (state.selectedType !== lastSelectedTypeRef.current) {
-      lastSelectedTypeRef.current = state.selectedType;
-      setTutorialProgress((previous) => ({
-        ...previous,
-        typeChanged: true,
-      }));
-    }
-  }, [activeTutorialStepId, isTutorialOpen, state.selectedType]);
-
-  useEffect(() => {
-    if (!isTutorialOpen || activeTutorialStepId !== "game-controls") {
-      return;
-    }
-
-    const handleKey = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase();
-      if (key === "arrowleft" || key === "arrowright" || key === "a" || key === "d") {
-        setTutorialProgress((previous) => ({
-          ...previous,
-          moved: true,
-        }));
-      }
-    };
-
-    const handlePointerMove = () => {
-      setTutorialProgress((previous) => ({
-        ...previous,
-        moved: true,
-      }));
-    };
-
-    const target = document.querySelector<HTMLElement>("[data-tutorial=\"tutorial-game-canvas\"]");
-    window.addEventListener("keydown", handleKey);
-    target?.addEventListener("pointermove", handlePointerMove);
-
-    return () => {
-      window.removeEventListener("keydown", handleKey);
-      target?.removeEventListener("pointermove", handlePointerMove);
-    };
-  }, [activeTutorialStepId, isTutorialOpen]);
-
-  useEffect(() => {
-    if (countdownValue === null) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setCountdownValue((current) => {
-        if (current === null) {
-          return null;
-        }
-
-        if (current <= 1) {
-          return null;
-        }
-
-        return current - 1;
-      });
-    }, 1000);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [countdownValue]);
-
+  // ── Not configured ──────────────────────────────────────────────────────
   if (!isConfigured) {
     return (
       <div className="min-h-screen bg-background px-3 py-6 sm:px-6 sm:py-8">
         <div className="mx-auto max-w-3xl rounded-3xl border border-border bg-card p-6 text-center text-sm text-foreground shadow-sm sm:p-8">
           <p className="font-medium text-amber-600">Configuracion pendiente</p>
           <p className="mt-2 text-muted-foreground">
-            Crea un archivo <code className="rounded bg-surface-raised px-1">.env.local</code> con las variables
-            de Supabase y reinicia el servidor de desarrollo.
+            Crea un archivo{" "}
+            <code className="rounded bg-surface-raised px-1">.env.local</code>{" "}
+            con las variables de Supabase y reinicia el servidor de desarrollo.
           </p>
           <Link
             href="/"
@@ -317,256 +150,260 @@ export default function GamePage() {
     );
   }
 
+  // ── Loading / unauthenticated ───────────────────────────────────────────
   if (loading || !session) {
     return (
       <div className="min-h-screen bg-background px-3 py-6 sm:px-6 sm:py-8">
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-center rounded-3xl border border-border bg-card/90 p-6 text-center shadow-sm sm:p-10">
           <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
-          <p className="text-sm font-medium text-muted-foreground">Verificando tu sesion...</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            Verificando tu sesion...
+          </p>
         </div>
       </div>
     );
   }
 
-  const handleModeSelect = (mode: GameModeId) => {
-    actions.selectMode(mode);
-    if (isTutorialOpen && activeTutorialStepId === "menu-modes") {
-      setTutorialProgress((previous) => ({
-        ...previous,
-        modeSelected: true,
-      }));
-    }
-  };
-
-  const handleStartGame = () => {
-    if (isTutorialOpen || (tutorialReady && !tutorialHasSeen)) {
-      actions.setTutorialState({
-        blockSpawns: true,
-        freezeTimer: true,
-      });
-    }
-    actions.startGame(state.mode);
-    if (isTutorialOpen && activeTutorialStepId === "menu-start") {
-      tutorialAdvanceRef.current = true;
-    }
-  };
-
-  const startCountdown = useCallback(() => {
-    setCountdownValue(3);
-  }, []);
-
-  const handleTutorialFinish = useCallback(() => {
-    finishTutorial();
-    if (state.phase === "playing") {
-      startCountdown();
-    }
-  }, [finishTutorial, startCountdown, state.phase]);
-
-  const handleTutorialSkip = useCallback(() => {
-    skipTutorial();
-    if (state.phase === "playing") {
-      startCountdown();
-    }
-  }, [skipTutorial, startCountdown, state.phase]);
-
-  const handleTutorialNext = () => {
-    if (!isTutorialOpen) {
-      return;
-    }
-
-    if (tutorialNextDisabled) {
-      return;
-    }
-
-    const nextIndex = tutorialStepIndex + 1;
-    if (nextIndex >= tutorialSteps.length) {
-      handleTutorialFinish();
-      return;
-    }
-
-    const nextStep = tutorialSteps[nextIndex];
-    if (nextStep?.phase === "playing" && state.phase !== "playing") {
-      tutorialAdvanceRef.current = true;
-      actions.setTutorialState({
-        blockSpawns: true,
-        freezeTimer: true,
-      });
-      actions.startGame(state.mode);
-      return;
-    }
-
-    nextTutorial();
-  };
-
-  const handleTutorialPrev = () => {
-    if (!canTutorialPrev) {
-      return;
-    }
-
-    prevTutorial();
-  };
-
+  // ── Game selector ───────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-eco-emerald-100)_0%,_var(--color-eco-emerald-50)_44%,_var(--color-eco-lime-50)_100%)] px-3 py-6 sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">EcoURP</p>
-            <h1 className="text-2xl font-black text-foreground sm:text-4xl">Eco-Catch</h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <AnimatedButton
-              type="button"
-              onClick={toggleFullscreen}
-              className="rounded-full border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground shadow-sm sm:px-4"
-              title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-eco-emerald-100)_0%,_var(--color-eco-emerald-50)_44%,_var(--color-eco-lime-50)_100%)] px-3 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto max-w-5xl">
+
+        {/* ── Header ── */}
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="mb-3 flex items-center gap-2"
+        >
+          <Link
+            href="/"
+            id="back-to-home-btn"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            {/* Arrow left icon */}
+            <svg
+              className="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              {isFullscreen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L4 4m0 0v4m0-4h4m6 6l5 5m0 0v-4m0 4h-4M9 15l-5 5m0 0v-4m0 4h4m6-6l5-5m0 0v4m0-4h-4" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" />
-                </svg>
-              )}
-              <span className="ml-1.5 hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla completa"}</span>
-            </AnimatedButton>
+              <path d="M19 12H5M12 5l-7 7 7 7" />
+            </svg>
+            Volver al Inicio
+          </Link>
+        </motion.div>
+
+        {/* ── Title block ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.48, ease: "easeOut", delay: 0.05 }}
+          className="mb-10 text-center sm:mb-14"
+        >
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            EcoURP · Minijuegos
+          </p>
+          <h1 className="mt-2 text-3xl font-black text-foreground sm:text-5xl">
+            Elige tu Aventura
+          </h1>
+          <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground sm:text-base">
+            Aprende sobre reciclaje y cuidado ambiental jugando. Selecciona un
+            minijuego para comenzar.
+          </p>
+
+          {/* Decorative leaf strip */}
+          <div className="mt-5 flex items-center justify-center gap-2" aria-hidden="true">
+            <span className="h-px w-16 bg-gradient-to-r from-transparent to-eco-emerald-300" />
+            <span className="text-eco-emerald-500">🌿</span>
+            <span className="h-px w-16 bg-gradient-to-l from-transparent to-eco-emerald-300" />
           </div>
+        </motion.div>
+
+        {/* ── Cards grid ── */}
+        <div className="grid gap-6 sm:grid-cols-2">
+
+          {/* ── Card 1: Eco-Catch ── */}
+          <GameCard href="/game/eco-catch" delay={0.1}>
+            {/* Illustration area */}
+            <div className="relative h-52 overflow-hidden bg-gradient-to-br from-eco-emerald-100 via-eco-lime-50 to-eco-emerald-200 sm:h-60">
+              {/* Animated background particles */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-eco-emerald-300/20"
+              />
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+                className="absolute -bottom-10 -left-6 h-36 w-36 rounded-full bg-eco-lime-300/25"
+              />
+
+              {/* Icon */}
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <div className="h-36 w-36 drop-shadow-lg sm:h-44 sm:w-44">
+                  <EcoCatchIcon />
+                </div>
+              </div>
+
+              {/* Badge */}
+              <span className="absolute left-4 top-4 rounded-full bg-eco-emerald-500/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow">
+                Disponible
+              </span>
+            </div>
+
+            {/* Content */}
+            <div className="flex flex-1 flex-col p-5 sm:p-6">
+              <div className="mb-1 flex items-center gap-2">
+                {/* Recycle icon */}
+                <svg className="h-4 w-4 text-eco-emerald-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.65 6.35A8 8 0 1 0 19.73 14H17.6a6 6 0 1 1-1.77-5.37L14 10h6V4l-2.35 2.35Z" />
+                </svg>
+                <h2 className="text-xl font-black text-foreground">Eco-Catch</h2>
+              </div>
+
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                Atrapa los residuos que caen en el campus universitario y
+                clasifícalos correctamente en sus respectivos tachos.
+              </p>
+
+              {/* Feature pills */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {["Clasificación", "Reflejos", "Campus URP"].map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-eco-emerald-200 bg-eco-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-eco-emerald-700"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-auto pt-5">
+                <Link
+                  href="/game/eco-catch"
+                  id="play-eco-catch-btn"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-md shadow-eco-emerald-500/30 transition-all hover:brightness-110 hover:shadow-lg active:scale-95"
+                >
+                  {/* Play icon */}
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Jugar Eco-Catch
+                </Link>
+              </div>
+            </div>
+          </GameCard>
+
+          {/* ── Card 2: Eco-Villa ── */}
+          <GameCard href="/game/eco-villa" delay={0.2}>
+            {/* Illustration area */}
+            <div className="relative h-52 overflow-hidden bg-gradient-to-br from-cyan-100 via-sky-50 to-teal-100 sm:h-60">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+                className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-cyan-300/20"
+              />
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                className="absolute -bottom-10 -left-6 h-36 w-36 rounded-full bg-teal-300/25"
+              />
+
+              {/* Water wave animation */}
+              <motion.div
+                animate={{ x: [0, 10, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-r from-cyan-300/40 via-sky-200/50 to-cyan-300/40 blur-sm"
+              />
+
+              {/* Icon */}
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <div className="h-36 w-36 drop-shadow-lg sm:h-44 sm:w-44">
+                  <EcoVillaIcon />
+                </div>
+              </div>
+
+              {/* Badge */}
+              <span className="absolute left-4 top-4 rounded-full bg-sky-500/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow">
+                Próximamente
+              </span>
+            </div>
+
+            {/* Content */}
+            <div className="flex flex-1 flex-col p-5 sm:p-6">
+              <div className="mb-1 flex items-center gap-2">
+                {/* Wave icon */}
+                <svg className="h-4 w-4 text-cyan-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17 8C8 10 5.9 16.17 3.82 21H5.71C6.66 19.07 7.96 17.2 10 16c3.93-2.14 7.38-.77 9.31-.16C20.68 16.22 21 16 21 16s-1.7-5.19-4-8z" />
+                </svg>
+                <h2 className="text-xl font-black text-foreground">Eco-Villa</h2>
+              </div>
+
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                Navega por los canales de los Pantanos de Villa en tu balsa de
+                totora y detén la contaminación urbana antes de que llegue a
+                las aves.
+              </p>
+
+              {/* Feature pills */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {["Navegación", "Ecosistemas", "Pantanos de Villa"].map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-0.5 text-[11px] font-semibold text-cyan-700"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-auto pt-5">
+                <Link
+                  href="/game/eco-villa"
+                  id="play-eco-villa-btn"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-teal-500 px-5 py-3 text-sm font-bold text-white shadow-md shadow-cyan-500/30 transition-all hover:brightness-110 hover:shadow-lg active:scale-95"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Jugar Eco-Villa
+                </Link>
+              </div>
+            </div>
+          </GameCard>
         </div>
 
+        {/* ── Footer links ── */}
         <motion.div
-          ref={viewportRef}
-          className={`relative ${isFullscreen ? "flex flex-col bg-gradient-to-b from-eco-emerald-900 to-eco-emerald-950" : ""}`}
-          initial={{ opacity: 0, y: 18 }}
-          animate={viewportControls}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-10 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground"
         >
-          <GameCanvas state={state} bridge={bridge} isFullscreen={isFullscreen} />
-
-          {state.phase === "playing" ? (
-            <>
-              <PowerUpHUD powerUps={state.powerUps} />
-              <div className="hidden sm:block">
-                <GameUI
-                  state={state}
-                  onSelectType={actions.setSelectedType}
-                  onDismissFeedback={actions.clearWrongFeedback}
-                  onTogglePause={actions.togglePause}
-                  onEndGame={actions.endGame}
-                  onToggleFullscreen={toggleFullscreen}
-                  isFullscreen={isFullscreen}
-                  layout="overlay"
-                />
-              </div>
-              <div className="sm:hidden">
-                <GameUI
-                  state={state}
-                  onSelectType={actions.setSelectedType}
-                  onDismissFeedback={actions.clearWrongFeedback}
-                  onTogglePause={actions.togglePause}
-                  onEndGame={actions.endGame}
-                  onToggleFullscreen={toggleFullscreen}
-                  isFullscreen={isFullscreen}
-                  layout="stacked"
-                />
-              </div>
-            </>
-          ) : null}
-
-          <AnimatePresence>
-            {state.phase === "menu" ? (
-              <motion.div
-                key={`menu-${state.mode}`}
-                className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto overscroll-contain p-3 sm:items-center sm:p-8"
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 12 }}
-                transition={{ duration: 0.44, ease: "easeOut" }}
-              >
-                <div className="w-full max-w-3xl max-h-[82dvh] overflow-y-auto rounded-3xl border border-border bg-card/90 p-5 shadow-2xl shadow-black/10 backdrop-blur-md sm:max-h-none sm:overflow-visible sm:p-8">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Selecciona modo</p>
-                  <h2 className="mt-2 text-2xl font-black text-foreground sm:text-3xl">Atrapa y clasifica residuos</h2>
-                  <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
-                    Controles: mover con flechas o A/D, cambiar tipo con teclas 1-4 o botones en pantalla.
-                    En mobile, arrastra horizontalmente para mover el tacho.
-                  </p>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-tutorial="tutorial-mode-cards">
-                    {GAME_MODES.map((mode) => {
-                      const selected = mode.id === state.mode;
-
-                      return (
-                        <AnimatedButton
-                          key={mode.id}
-                          type="button"
-                          onClick={() => handleModeSelect(mode.id)}
-                          className={`rounded-2xl border p-3 text-left shadow-md sm:p-4 ${
-                            selected
-                              ? "border-primary bg-accent"
-                              : "border-border bg-card"
-                          }`}
-                        >
-                          <p className="text-xs font-bold uppercase tracking-widest text-primary">{mode.label}</p>
-                          <p className="mt-2 text-xs text-muted-foreground sm:text-sm">{mode.description}</p>
-                          <p className="mt-3 text-xs font-semibold text-muted-foreground">
-                            Spawn: {mode.spawnMs}ms | Velocidad: {mode.fallSpeed}
-                          </p>
-                        </AnimatedButton>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                    <AnimatedButton
-                      type="button"
-                      onClick={handleStartGame}
-                      className="w-full rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md sm:py-3"
-                      data-tutorial="tutorial-start-button"
-                    >
-                      Iniciar partida
-                    </AnimatedButton>
-                    <AnimatedButton
-                      type="button"
-                      onClick={() => startTutorial("menu")}
-                      className="w-full rounded-2xl border border-emerald-200/70 bg-emerald-500/10 px-5 py-2.5 text-sm font-semibold text-emerald-700 shadow-md sm:py-3"
-                    >
-                      Tutorial
-                    </AnimatedButton>
-                    <Link
-                      href="/ranking"
-                      className="inline-flex w-full items-center justify-center rounded-2xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground sm:py-3"
-                    >
-                      Ver ranking
-                    </Link>
-                  </div>
-                </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-
-          <GameOverModal
-            open={state.phase === "game-over"}
-            summary={state.summary}
-            saveStatus={state.saveStatus}
-            saveMessage={state.saveMessage}
-            onReplay={() => actions.startGame(state.mode)}
-            onBackToMenu={actions.returnToMenu}
-          />
-
-          <GameTutorialOverlay
-            open={isTutorialOpen}
-            steps={tutorialSteps}
-            stepIndex={tutorialStepIndex}
-            canPrev={canTutorialPrev}
-            nextDisabled={tutorialNextDisabled}
-            recalcKey={`${state.phase}-${state.roundId}-${isFullscreen}`}
-            onNext={handleTutorialNext}
-            onPrev={handleTutorialPrev}
-            onSkip={handleTutorialSkip}
-            onFinish={handleTutorialFinish}
-          />
-
-          <TutorialCountdownOverlay open={isCountdownActive} value={countdownValue} />
+          <Link
+            href="/ranking"
+            className="inline-flex items-center gap-1 rounded-full border border-border bg-card/70 px-3 py-1.5 font-semibold transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            {/* Trophy icon */}
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 2v2H5A1 1 0 0 0 4 5v3a4 4 0 0 0 4 4h.08A5 5 0 0 0 12 16a5 5 0 0 0 3.92-4H16a4 4 0 0 0 4-4V5a1 1 0 0 0-1-1h-2V2H7zm9 4h2v2a2 2 0 0 1-2 2v-4zM6 6V8a2 2 0 0 1-2-2V6h2zm5 12H9v-1h6v1h-2v3h-2v-3z" />
+            </svg>
+            Ver Ranking
+          </Link>
+          <Link
+            href="/perfil"
+            className="inline-flex items-center gap-1 rounded-full border border-border bg-card/70 px-3 py-1.5 font-semibold transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            {/* User icon */}
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z" />
+            </svg>
+            Mi Perfil
+          </Link>
         </motion.div>
       </div>
     </div>

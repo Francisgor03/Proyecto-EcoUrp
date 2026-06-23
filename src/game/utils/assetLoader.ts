@@ -19,6 +19,19 @@ import sprTachoVidrioImage from "@/assets/sprites/spr_tacho_vidrio.png";
 import sprVidrioBotellaImage from "@/assets/sprites/spr_vidrio_botella.png";
 import sprVidrioFrascoImage from "@/assets/sprites/spr_vidrio_frasco.png";
 import sprVidrioTarroImage from "@/assets/sprites/spr_vidrio_tarro.png";
+
+// Eco-Villa images
+import fondoEcoVillaImage from "@/assets/images/eco-villa/Fondo eco-villa.jpg";
+import matiEcoVillaImage from "@/assets/images/eco-villa/Mati eco-villa.png";
+import residuosVilla1Image from "@/assets/images/eco-villa/Residuos-villa1.png";
+import residuosVilla2Image from "@/assets/images/eco-villa/Residuos-villa2.png";
+import residuosVilla3Image from "@/assets/images/eco-villa/Residuos-villa3.png";
+import residuosVilla4Image from "@/assets/images/eco-villa/Residuos-villa4.png";
+import aceiteEcoVilla1Image from "@/assets/images/eco-villa/aceite eco-villa1.png";
+import aceiteEcoVilla2Image from "@/assets/images/eco-villa/aceite eco-villa2.png";
+import aceiteEcoVilla3Image from "@/assets/images/eco-villa/aceite eco-villa3.png";
+import fondo2EcoVillaImage from "@/assets/images/eco-villa/fondo 2 eco-villa.png";
+
 import { WASTE_IDS, getWasteType, type WasteTypeId } from "@/game/config/wasteTypes";
 import {
   POWER_UP_IDS,
@@ -54,6 +67,12 @@ export interface LoadedGameAssets {
   particle: Texture;
   wastes: Record<WasteTypeId, Texture[]>;
   powerUps: Record<PowerUpId, Texture[]>;
+  ecoVilla?: {
+    backgroundFar: Texture;
+    backgroundNear: Texture;
+    collector: Texture;
+    wastes: Record<WasteTypeId, Texture[]>;
+  };
 }
 
 const WASTE_SPRITE_SOURCES: Record<WasteTypeId, StaticImageData[]> = {
@@ -201,11 +220,36 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
   }
 
   assetCachePromise = (async () => {
+    const ecoVillaKeys = {
+      bgFar: "ev-bg-far",
+      bgNear: "ev-bg-near",
+      collector: "ev-collector",
+      residuo1: "ev-res-1",
+      residuo2: "ev-res-2",
+      residuo3: "ev-res-3",
+      residuo4: "ev-res-4",
+      aceite1: "ev-oil-1",
+      aceite2: "ev-oil-2",
+      aceite3: "ev-oil-3",
+    } as const;
+
     registerAsset(ASSET_KEYS.backgroundFar, resolveImageSource(datosImage));
     registerAsset(ASSET_KEYS.backgroundMid, resolveImageSource(heroImage));
     registerAsset(ASSET_KEYS.backgroundNear, resolveImageSource(fondoPruebaImage));
     registerAsset(ASSET_KEYS.errorIcon, createErrorIconSvg());
     registerAsset(ASSET_KEYS.particle, createParticleSvg());
+
+    // Register Eco-Villa specific assets
+    registerAsset(ecoVillaKeys.bgFar, resolveImageSource(fondoEcoVillaImage));
+    registerAsset(ecoVillaKeys.bgNear, resolveImageSource(fondo2EcoVillaImage));
+    registerAsset(ecoVillaKeys.collector, resolveImageSource(matiEcoVillaImage));
+    registerAsset(ecoVillaKeys.residuo1, resolveImageSource(residuosVilla1Image));
+    registerAsset(ecoVillaKeys.residuo2, resolveImageSource(residuosVilla2Image));
+    registerAsset(ecoVillaKeys.residuo3, resolveImageSource(residuosVilla3Image));
+    registerAsset(ecoVillaKeys.residuo4, resolveImageSource(residuosVilla4Image));
+    registerAsset(ecoVillaKeys.aceite1, resolveImageSource(aceiteEcoVilla1Image));
+    registerAsset(ecoVillaKeys.aceite2, resolveImageSource(aceiteEcoVilla2Image));
+    registerAsset(ecoVillaKeys.aceite3, resolveImageSource(aceiteEcoVilla3Image));
 
     for (const powerUpId of POWER_UP_IDS) {
       const definition = getPowerUpDefinition(powerUpId);
@@ -219,6 +263,7 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
       ASSET_KEYS.errorIcon,
       ASSET_KEYS.particle,
       ...Object.values(POWER_UP_ASSET_KEYS),
+      ...Object.values(ecoVillaKeys),
     ]);
 
     const wasteTextures = {} as Record<WasteTypeId, Texture[]>;
@@ -258,6 +303,22 @@ export async function preloadGameAssets(): Promise<LoadedGameAssets> {
       particle: getTexture(ASSET_KEYS.particle),
       wastes: wasteTextures,
       powerUps: powerUpTextures,
+      ecoVilla: {
+        backgroundFar: getTexture(ecoVillaKeys.bgFar),
+        backgroundNear: getTexture(ecoVillaKeys.bgNear),
+        collector: getTexture(ecoVillaKeys.collector),
+        wastes: {
+          plastic: [getTexture(ecoVillaKeys.residuo1)],
+          paper: [getTexture(ecoVillaKeys.residuo2)],
+          glass: [getTexture(ecoVillaKeys.residuo3)],
+          organic: [
+            getTexture(ecoVillaKeys.residuo4),
+            getTexture(ecoVillaKeys.aceite1),
+            getTexture(ecoVillaKeys.aceite2),
+            getTexture(ecoVillaKeys.aceite3),
+          ],
+        },
+      },
     };
   })();
 

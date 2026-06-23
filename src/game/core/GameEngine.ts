@@ -10,13 +10,13 @@ import {
 } from "@/game/config/powerUps";
 import { DifficultyManager, type DifficultySnapshot } from "@/game/core/DifficultyManager";
 import { CollisionSystem } from "@/game/core/CollisionSystem";
-import { SpawnSystem } from "@/game/core/SpawnSystem";
+import { SpawnSystem, type SpawnPosition } from "@/game/core/SpawnSystem";
 import { Collector } from "@/game/entities/Collector";
 import { PowerUp } from "@/game/entities/PowerUp";
 import { Waste } from "@/game/entities/Waste";
 import { ParticleEffect } from "@/game/entities/ParticleEffect";
 import type { LoadedGameAssets } from "@/game/utils/assetLoader";
-import type { GameModeId } from "@/game/config/gameModes";
+import { isHorizontalMode, type GameModeId } from "@/game/config/gameModes";
 
 export type GamePhase = "menu" | "playing" | "game-over";
 export type GameOverReason = "time" | "lives" | "manual";
@@ -123,6 +123,8 @@ export class GameEngine {
 
   private keyboardLeftPressed = false;
   private keyboardRightPressed = false;
+  private keyboardUpPressed = false;
+  private keyboardDownPressed = false;
 
   private touchTrackingActive = false;
   private touchLastX = 0;
@@ -153,19 +155,25 @@ export class GameEngine {
     this.app.stage.addChild(this.root);
     this.root.addChild(this.parallaxRoot, this.worldRoot, this.effectRoot);
 
-    this.setupParallax();
+    this.setupParallax(initialState.mode);
 
     const playBounds = this.getPlayBounds();
+    const waterBounds = this.getWaterBounds();
+    const startInHorizontalMode = isHorizontalMode(initialState.mode);
 
     this.collector = new Collector({
       textures: this.assets.collectors,
       startX: this.width / 2,
-      y: this.getCollectorY(),
+      y: startInHorizontalMode ? this.height / 2 : this.getCollectorY(),
       minX: playBounds.minX,
       maxX: playBounds.maxX,
       moveSpeed: 360,
       selectedType: initialState.selectedType,
       baseScale: this.resolveCollectorScale(),
+      horizontal: startInHorizontalMode,
+      minY: waterBounds.minY,
+      maxY: waterBounds.maxY,
+      ecoVillaCollectorTexture: this.assets.ecoVilla?.collector,
     });
 
     this.errorIcon = new Sprite(this.assets.errorIcon);
@@ -181,8 +189,11 @@ export class GameEngine {
     this.spawnSystem = new SpawnSystem({
       minX: playBounds.minX,
       maxX: playBounds.maxX,
+      minY: waterBounds.minY,
+      maxY: waterBounds.maxY,
+      horizontal: startInHorizontalMode,
       getCurrentSpawnMs: () => this.currentDifficulty.spawnMs,
-      onSpawn: (x) => this.spawnItem(x),
+      onSpawn: (pos) => this.spawnItem(pos),
     });
 
     this.keyDownHandler = (event) => this.handleKeyDown(event);
@@ -209,6 +220,7 @@ export class GameEngine {
   public startRound(): void {
     const snapshot = this.bridge.getState();
     const blockSpawns = snapshot.tutorial?.blockSpawns ?? false;
+    const horizontal = isHorizontalMode(snapshot.mode);
 
     this.isRoundRunning = true;
     this.spawnedItemCount = 0;
@@ -220,10 +232,19 @@ export class GameEngine {
     this.clearPowerUps();
 
     this.collector.x = this.width / 2;
-    this.collector.y = this.getCollectorY();
+    this.collector.y = horizontal ? this.height / 2 : this.getCollectorY();
     this.collector.setMoveDirection(0);
+    this.collector.setMoveDirectionY(0);
     this.collector.applySelectedType(snapshot.selectedType);
     this.collector.setSpeedMultiplier(1);
+
+    const waterBounds = this.getWaterBounds();
+    this.spawnSystem.setBounds(
+      this.getPlayBounds().minX,
+      this.getPlayBounds().maxX,
+      waterBounds.minY,
+      waterBounds.maxY,
+    );
 
     this.spawnSystem.setPaused(blockSpawns);
     this.spawnSystem.reset();
@@ -257,10 +278,26 @@ export class GameEngine {
     this.height = height;
 
     const playBounds = this.getPlayBounds();
-    this.spawnSystem.setBounds(playBounds.minX, playBounds.maxX);
-    this.collector.setBounds(playBounds.minX, playBounds.maxX);
+    const waterBounds = this.getWaterBounds();
+    const snapshot = this.bridge.getState();
+    const horizontal = isHorizontalMode(snapshot.mode);
+
+    this.spawnSystem.setBounds(
+      playBounds.minX,
+      playBounds.maxX,
+      waterBounds.minY,
+      waterBounds.maxY,
+    );
+    this.collector.setBounds(
+      playBounds.minX,
+      playBounds.maxX,
+      waterBounds.minY,
+      waterBounds.maxY,
+    );
     this.collector.setBaseScale(this.resolveCollectorScale());
-    this.collector.y = this.getCollectorY();
+    if (!horizontal) {
+      this.collector.y = this.getCollectorY();
+    }
 
     this.parallaxLayers.forEach((layer) => {
       this.layoutParallaxLayer(layer);
@@ -286,12 +323,18 @@ export class GameEngine {
     this.root.destroy({ children: true });
   }
 
-  private setupParallax(): void {
-    const layersConfig = [
-      { texture: this.assets.backgrounds.far, speed: 8, alpha: 0.28, tint: 0x9ca3af },
-      { texture: this.assets.backgrounds.mid, speed: 16, alpha: 0.36, tint: 0x93c5fd },
-      { texture: this.assets.backgrounds.near, speed: 28, alpha: 0.5, tint: 0xffffff },
-    ];
+  private setupParallax(mode: GameModeId): void {
+    const isVilla = isHorizontalMode(mode);
+    const layersConfig = (isVilla && this.assets.ecoVilla)
+      ? [
+          { texture: this.assets.ecoVilla.backgroundFar, speed: 6, alpha: 1.0, tint: 0xffffff },
+          { texture: this.assets.ecoVilla.backgroundNear, speed: 18, alpha: 1.0, tint: 0xffffff },
+        ]
+      : [
+          { texture: this.assets.backgrounds.far, speed: 8, alpha: 0.28, tint: 0x9ca3af },
+          { texture: this.assets.backgrounds.mid, speed: 16, alpha: 0.36, tint: 0x93c5fd },
+          { texture: this.assets.backgrounds.near, speed: 28, alpha: 0.5, tint: 0xffffff },
+        ];
 
     for (const layerConfig of layersConfig) {
       const spriteA = new Sprite(layerConfig.texture);
@@ -389,12 +432,17 @@ export class GameEngine {
 
     const moveDirection = this.computeMoveDirection(deltaMs);
     this.collector.setMoveDirection(moveDirection);
+    if (isHorizontalMode(tickedState.mode)) {
+      this.collector.setMoveDirectionY(this.computeVerticalDirection());
+    }
     this.collector.update(deltaMs);
 
     if (!blockSpawns) {
       this.spawnSystem.update(deltaMs);
     }
     const fallSpeed = this.resolveFallSpeed(tickedState);
+
+    const horizontal = isHorizontalMode(tickedState.mode);
 
     for (let index = this.wastes.length - 1; index >= 0; index -= 1) {
       const waste = this.wastes[index];
@@ -421,7 +469,12 @@ export class GameEngine {
         continue;
       }
 
-      if (CollisionSystem.isWasteOutOfBounds(waste, this.height + 20)) {
+      // Condición de fuga: según el eje del modo activo.
+      const wasteEscaped = horizontal
+        ? CollisionSystem.isWastePastRightEdge(waste, this.width + 20)
+        : CollisionSystem.isWasteOutOfBounds(waste, this.height + 20);
+
+      if (wasteEscaped) {
         this.resolveMissedWaste(index, waste);
 
         if (!this.isRoundRunning) {
@@ -445,7 +498,11 @@ export class GameEngine {
         continue;
       }
 
-      if (CollisionSystem.isPowerUpOutOfBounds(powerUp, this.height + 20)) {
+      const powerUpEscaped = horizontal
+        ? CollisionSystem.isPowerUpPastRightEdge(powerUp, this.width + 20)
+        : CollisionSystem.isPowerUpOutOfBounds(powerUp, this.height + 20);
+
+      if (powerUpEscaped) {
         this.resolveMissedPowerUp(index, powerUp);
 
         if (!this.isRoundRunning) {
@@ -541,11 +598,23 @@ export class GameEngine {
   private getPlayBounds(): { minX: number; maxX: number } {
     const effectiveWidth = Math.min(this.width, MAX_PLAY_WIDTH);
     const centerX = this.width / 2;
-    const halfPlay = (effectiveWidth / 2) - PLAY_PADDING;
+    const halfPlay = effectiveWidth / 2 - PLAY_PADDING;
 
     return {
       minX: centerX - halfPlay,
       maxX: centerX + halfPlay,
+    };
+  }
+
+  /**
+   * Rango vertical del canal navegable en Eco-Villa.
+   * Ocupa el 70% central de la pantalla.
+   */
+  private getWaterBounds(): { minY: number; maxY: number } {
+    const margin = this.height * 0.15;
+    return {
+      minY: margin,
+      maxY: this.height - margin,
     };
   }
 
@@ -579,29 +648,36 @@ export class GameEngine {
     }
   }
 
-  private spawnItem(x: number): void {
+  private spawnItem(pos: SpawnPosition): void {
     const shouldSpawnPowerUp = Math.random() < POWER_UP_DROP_CHANCE;
 
     if (shouldSpawnPowerUp) {
-      this.spawnPowerUp(this.pickRandomPowerUpType(), x);
+      this.spawnPowerUp(this.pickRandomPowerUpType(), pos);
       return;
     }
 
-    this.spawnWaste(this.pickRandomWasteType(), x);
+    this.spawnWaste(this.pickRandomWasteType(), pos);
   }
 
-  private spawnWaste(type: WasteTypeId, x: number): void {
+  private spawnWaste(type: WasteTypeId, pos: SpawnPosition): void {
     if (!this.isRoundRunning) {
       return;
     }
 
+    const snapshot = this.bridge.getState();
+    const horizontal = isHorizontalMode(snapshot.mode);
+    const textures = (horizontal && this.assets.ecoVilla)
+      ? this.assets.ecoVilla.wastes[type]
+      : this.assets.wastes[type];
+
     const waste = new Waste({
       id: `w-${this.spawnedItemCount}`,
       type,
-      textures: this.assets.wastes[type],
-      x,
-      y: -80,
+      textures,
+      x: pos.x,
+      y: pos.y,
       fallSpeed: this.currentDifficulty.fallSpeed,
+      horizontal,
     });
 
     this.spawnedItemCount += 1;
@@ -610,7 +686,7 @@ export class GameEngine {
     this.worldRoot.addChild(waste);
   }
 
-  private spawnPowerUp(type: PowerUpId, x: number): void {
+  private spawnPowerUp(type: PowerUpId, pos: SpawnPosition): void {
     if (!this.isRoundRunning) {
       return;
     }
@@ -619,8 +695,8 @@ export class GameEngine {
       id: `p-${this.spawnedItemCount}`,
       type,
       textures: this.assets.powerUps[type],
-      x,
-      y: -80,
+      x: pos.x,
+      y: pos.y,
       fallSpeed: this.currentDifficulty.fallSpeed,
     });
 
@@ -665,7 +741,8 @@ export class GameEngine {
       }
     }
 
-    const keyboardDirection = Number(this.keyboardRightPressed) - Number(this.keyboardLeftPressed);
+    const keyboardDirection =
+      Number(this.keyboardRightPressed) - Number(this.keyboardLeftPressed);
     const touchDirection = this.touchDirection;
 
     if (touchDirection !== 0) {
@@ -673,6 +750,11 @@ export class GameEngine {
     }
 
     return keyboardDirection;
+  }
+
+  /** Dirección vertical: solo activa en modo Eco-Villa. */
+  private computeVerticalDirection(): number {
+    return Number(this.keyboardDownPressed) - Number(this.keyboardUpPressed);
   }
 
   private updateScreenShake(deltaMs: number): void {
@@ -798,6 +880,19 @@ export class GameEngine {
       return;
     }
 
+    // Eco-Villa: movimiento vertical.
+    if (code === "ArrowUp" || key.toLowerCase() === "w") {
+      this.keyboardUpPressed = true;
+      event.preventDefault();
+      return;
+    }
+
+    if (code === "ArrowDown" || key.toLowerCase() === "s") {
+      this.keyboardDownPressed = true;
+      event.preventDefault();
+      return;
+    }
+
     const normalizedType = this.resolveWasteFromKey(event);
     if (normalizedType) {
       const nextState = this.bridge.onSelectWasteType(normalizedType);
@@ -817,6 +912,18 @@ export class GameEngine {
 
     if (code === "ArrowRight" || key.toLowerCase() === "d") {
       this.keyboardRightPressed = false;
+      event.preventDefault();
+      return;
+    }
+
+    if (code === "ArrowUp" || key.toLowerCase() === "w") {
+      this.keyboardUpPressed = false;
+      event.preventDefault();
+      return;
+    }
+
+    if (code === "ArrowDown" || key.toLowerCase() === "s") {
+      this.keyboardDownPressed = false;
       event.preventDefault();
     }
   }

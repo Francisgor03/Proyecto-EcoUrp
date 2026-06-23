@@ -8,15 +8,21 @@ export interface WasteOptions {
   x: number;
   y: number;
   fallSpeed: number;
+  /** Si es true el residuo flota horizontalmente (Eco-Villa). */
+  horizontal?: boolean;
 }
 
 /**
- * Residuo individual del juego con animaciones de caida,
- * rotacion suave y wobble horizontal.
+ * Residuo individual del juego.
+ *
+ * Eco-Catch (vertical): cae de arriba hacia abajo con wobble horizontal suave.
+ * Eco-Villa (horizontal): flota de izquierda a derecha arrastrado por la corriente
+ *   con un movimiento sinusoidal en Y que simula el oleaje del canal.
  */
 export class Waste extends Container {
   public readonly id: string;
   public readonly type: WasteTypeId;
+  public readonly horizontal: boolean;
 
   private readonly sprite: Sprite;
   private readonly wobbleAmplitude: number;
@@ -25,7 +31,8 @@ export class Waste extends Container {
   private readonly phaseOffset: number;
 
   private elapsedMs = 0;
-  private originX: number;
+  /** Posición de origen en el eje perpendicular al movimiento. */
+  private originPerp: number;
   private _fallSpeed: number;
 
   public constructor(options: WasteOptions) {
@@ -33,13 +40,14 @@ export class Waste extends Container {
 
     this.id = options.id;
     this.type = options.type;
-    this.originX = options.x;
+    this.horizontal = options.horizontal ?? false;
     this._fallSpeed = options.fallSpeed;
 
+    // En modo vertical originPerp es X; en horizontal es Y.
+    this.originPerp = this.horizontal ? options.y : options.x;
+
     const availableTextures =
-      options.textures.length > 0
-        ? options.textures
-        : [Texture.WHITE];
+      options.textures.length > 0 ? options.textures : [Texture.WHITE];
     const variantIndex = Math.floor(Math.random() * availableTextures.length);
 
     this.sprite = new Sprite(availableTextures[variantIndex]);
@@ -48,6 +56,7 @@ export class Waste extends Container {
     const baseScale = 0.26 + Math.random() * 0.1;
     this.sprite.scale.set(baseScale);
 
+    // Parámetros de ondulación (usados en el eje perpendicular al movimiento).
     this.wobbleAmplitude = 6 + Math.random() * 12;
     this.wobbleFrequency = 0.0024 + Math.random() * 0.0025;
     this.rotationSpeed = (Math.random() * 2 - 1) * 0.0018;
@@ -63,21 +72,32 @@ export class Waste extends Container {
     this._fallSpeed = Math.max(40, nextSpeed);
   }
 
-  public shiftOrigin(deltaX: number): void {
-    this.originX += deltaX;
+  /** Desplaza el origen del eje perpendicular (usado por parallax horizontal). */
+  public shiftOrigin(deltaPerp: number): void {
+    this.originPerp += deltaPerp;
   }
 
   public update(deltaMs: number): void {
     this.elapsedMs += deltaMs;
 
-    this.y += (this._fallSpeed * deltaMs) / 1000;
+    const wave =
+      Math.sin(this.elapsedMs * this.wobbleFrequency + this.phaseOffset) *
+      this.wobbleAmplitude;
 
-    const wobbleX = Math.sin(this.elapsedMs * this.wobbleFrequency + this.phaseOffset) * this.wobbleAmplitude;
-    this.x = this.originX + wobbleX;
+    if (this.horizontal) {
+      // Eco-Villa: avanza hacia la derecha, ondula suavemente en Y.
+      this.x += (this._fallSpeed * deltaMs) / 1000;
+      this.y = this.originPerp + wave;
+    } else {
+      // Eco-Catch: cae hacia abajo, wobble suave en X.
+      this.y += (this._fallSpeed * deltaMs) / 1000;
+      this.x = this.originPerp + wave;
+    }
 
     this.sprite.rotation += this.rotationSpeed * deltaMs;
 
-    const pulse = 1 + Math.sin(this.elapsedMs * 0.008 + this.phaseOffset) * 0.03;
+    const pulse =
+      1 + Math.sin(this.elapsedMs * 0.008 + this.phaseOffset) * 0.03;
     this.scale.set(pulse);
   }
 

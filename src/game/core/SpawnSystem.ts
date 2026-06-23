@@ -1,8 +1,27 @@
+/**
+ * Posición de spawn retornada por SpawnSystem.
+ * En modo vertical (Eco-Catch): x aleatorio, y = -80 (fuera del canvas por arriba).
+ * En modo horizontal (Eco-Villa): x = -80 (fuera del canvas por la izquierda),
+ *   y aleatorio dentro del rango navegable.
+ */
+export interface SpawnPosition {
+  x: number;
+  y: number;
+}
+
 export interface SpawnSystemConfig {
   minX: number;
   maxX: number;
+  minY?: number;
+  maxY?: number;
+  /** Si es true los elementos spawnan en el borde izquierdo y flotan hacia la derecha. */
+  horizontal?: boolean;
   getCurrentSpawnMs: () => number;
-  onSpawn: (x: number) => void;
+  onSpawn: (pos: SpawnPosition) => void;
+}
+
+function randomBetween(min: number, max: number): number {
+  return min + Math.random() * (max - min);
 }
 
 function randomInt(min: number, max: number): number {
@@ -10,13 +29,17 @@ function randomInt(min: number, max: number): number {
 }
 
 /**
- * Controla el ritmo de aparicion de residuos durante la partida.
+ * Controla el ritmo de aparición de residuos durante la partida.
+ * Soporta tanto el eje vertical (Eco-Catch) como el horizontal (Eco-Villa).
  */
 export class SpawnSystem {
   private spawnMinX: number;
   private spawnMaxX: number;
+  private spawnMinY: number;
+  private spawnMaxY: number;
+  private readonly horizontal: boolean;
   private readonly getCurrentSpawnMs: () => number;
-  private readonly onSpawn: (x: number) => void;
+  private readonly onSpawn: (pos: SpawnPosition) => void;
 
   private cooldownMs = 0;
   private paused = false;
@@ -24,6 +47,9 @@ export class SpawnSystem {
   public constructor(config: SpawnSystemConfig) {
     this.spawnMinX = config.minX;
     this.spawnMaxX = config.maxX;
+    this.spawnMinY = config.minY ?? 0;
+    this.spawnMaxY = config.maxY ?? 0;
+    this.horizontal = config.horizontal ?? false;
     this.getCurrentSpawnMs = config.getCurrentSpawnMs;
     this.onSpawn = config.onSpawn;
   }
@@ -61,14 +87,27 @@ export class SpawnSystem {
     this.paused = value;
   }
 
-  public setBounds(minX: number, maxX: number): void {
+  /** Actualiza los límites del eje principal (X para vertical, Y para horizontal). */
+  public setBounds(minX: number, maxX: number, minY?: number, maxY?: number): void {
     this.spawnMinX = minX;
     this.spawnMaxX = maxX;
+    if (minY !== undefined) this.spawnMinY = minY;
+    if (maxY !== undefined) this.spawnMaxY = maxY;
   }
 
   private spawnOnce(): void {
-    const x = randomInt(this.spawnMinX, this.spawnMaxX);
+    let pos: SpawnPosition;
 
-    this.onSpawn(x);
+    if (this.horizontal) {
+      // Eco-Villa: spawn en borde izquierdo, altura aleatoria en zona navegable.
+      const y = randomBetween(this.spawnMinY, this.spawnMaxY);
+      pos = { x: -80, y };
+    } else {
+      // Eco-Catch: spawn fuera del canvas por arriba, x aleatorio.
+      const x = randomInt(this.spawnMinX, this.spawnMaxX);
+      pos = { x, y: -80 };
+    }
+
+    this.onSpawn(pos);
   }
 }
