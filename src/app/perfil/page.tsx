@@ -14,7 +14,16 @@ import {
   type UserStats,
 } from "@/config/avatars";
 
-type GameMode = "easy" | "normal" | "hard" | "timed" | "zen";
+type GameMode =
+  | "easy"
+  | "normal"
+  | "hard"
+  | "timed"
+  | "zen"
+  | "eco-villa-easy"
+  | "eco-villa-normal"
+  | "eco-villa-hard"
+  | "eco-villa";
 
 type SessionRow = {
   score: number | null;
@@ -57,6 +66,10 @@ const MODE_LABELS: Record<GameMode, string> = {
   hard: "Dificil",
   timed: "Contrarreloj",
   zen: "Zen",
+  "eco-villa-easy": "Fácil",
+  "eco-villa-normal": "Normal",
+  "eco-villa-hard": "Difícil",
+  "eco-villa": "Eco-Villa",
 };
 
 const MODE_BADGE_STYLES: Record<GameMode, string> = {
@@ -65,6 +78,10 @@ const MODE_BADGE_STYLES: Record<GameMode, string> = {
   hard: "border-border bg-eco-emerald-300 text-eco-emerald-900",
   timed: "border-border bg-eco-lime-200 text-eco-emerald-900",
   zen: "border-border bg-eco-lime-100 text-eco-emerald-900",
+  "eco-villa-easy": "border-border bg-cyan-100 text-cyan-900",
+  "eco-villa-normal": "border-border bg-cyan-200 text-cyan-900",
+  "eco-villa-hard": "border-border bg-cyan-300 text-cyan-900",
+  "eco-villa": "border-border bg-cyan-200 text-cyan-900",
 };
 
 const ACHIEVEMENT_REQUIREMENTS: Record<string, string> = {
@@ -76,7 +93,17 @@ const ACHIEVEMENT_REQUIREMENTS: Record<string, string> = {
 };
 
 function normalizeMode(value: string | null | undefined): GameMode {
-  if (value === "easy" || value === "normal" || value === "hard" || value === "timed" || value === "zen") {
+  if (
+    value === "easy" ||
+    value === "normal" ||
+    value === "hard" ||
+    value === "timed" ||
+    value === "zen" ||
+    value === "eco-villa-easy" ||
+    value === "eco-villa-normal" ||
+    value === "eco-villa-hard" ||
+    value === "eco-villa"
+  ) {
     return value;
   }
   return "normal";

@@ -168,7 +168,7 @@ export default function GameUI({
           </div>
         </div>
 
-        {state.mode !== "eco-villa" && (
+        {!state.mode.startsWith("eco-villa") && (
           <div className="pointer-events-auto grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3" data-tutorial="tutorial-waste-selector">
             {WASTE_TYPES.map((waste) => {
               const selected = state.selectedType === waste.id;

@@ -30,6 +30,10 @@ import { GAME_TUTORIAL_STEPS, MENU_TUTORIAL_STEPS } from "@/game/tutorialSteps";
 import { buildWrongBinFeedback, useGameState } from "@/game/useGameState";
 import { useGameTutorial } from "@/hooks/useGameTutorial";
 
+const ECO_CATCH_MENU_MODES = GAME_MODES.filter(
+  (mode) => !mode.id.startsWith("eco-villa") && mode.id !== "eco-villa"
+);
+
 const GameCanvas = dynamic(() => import("@/components/game/GameCanvas"), {
   ssr: false,
 });
@@ -607,7 +611,7 @@ export default function EcoCatchPage() {
                     className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
                     data-tutorial="tutorial-mode-cards"
                   >
-                    {GAME_MODES.map((mode) => {
+                    {ECO_CATCH_MENU_MODES.map((mode) => {
                       const selected = mode.id === state.mode;
 
                       return (
@@ -615,10 +619,10 @@ export default function EcoCatchPage() {
                           key={mode.id}
                           type="button"
                           onClick={() => handleModeSelect(mode.id)}
-                          className={`rounded-2xl border p-3 text-left shadow-md sm:p-4 ${
+                          className={`rounded-2xl border p-3 text-left shadow-md sm:p-4 transition-all duration-300 ${
                             selected
-                              ? "border-primary bg-accent"
-                              : "border-border bg-card"
+                              ? "border-primary bg-accent text-primary-foreground shadow-md"
+                              : "border-border bg-card text-foreground hover:bg-surface-raised"
                           }`}
                         >
                           <p className="text-xs font-bold uppercase tracking-widest text-primary">

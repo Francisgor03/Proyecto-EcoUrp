@@ -10,13 +10,25 @@ export const dynamic = "force-dynamic";
 
 const MAX_ROWS = 50;
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const MODE_LABELS = {
-  easy: "Facil",
+const ECO_CATCH_MODES = {
+  easy: "Fácil",
   normal: "Normal",
-  hard: "Dificil",
+  hard: "Difícil",
   timed: "Contrarreloj",
   zen: "Zen",
 };
+
+const ECO_VILLA_MODES = {
+  "eco-villa-easy": "Fácil",
+  "eco-villa-normal": "Normal",
+  "eco-villa-hard": "Difícil",
+};
+
+const MODE_LABELS = {
+  ...ECO_CATCH_MODES,
+  ...ECO_VILLA_MODES,
+};
+
 type ModeKey = keyof typeof MODE_LABELS;
 
 export default async function RankingPage({
@@ -151,7 +163,7 @@ export default async function RankingPage({
                 Tabla de posiciones
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Top {MAX_ROWS} jugadores en modo {MODE_LABELS[mode].toLowerCase()}.
+                Top {MAX_ROWS} jugadores en {mode.startsWith("eco-villa") ? "Eco-Villa" : "Eco-Catch"} - Modo {MODE_LABELS[mode]}.
               </p>
             </div>
           </div>
@@ -159,24 +171,56 @@ export default async function RankingPage({
           <div className="mt-5 rounded-2xl border border-border bg-surface-raised/50 p-4 sm:p-5">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
               <div className="min-w-0 flex-1 space-y-5">
-                <div>
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Modo de juego
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(MODE_LABELS).map(([value, label]) => (
+                <div className="space-y-4">
+                  <div>
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Juego
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 rounded-2xl bg-card p-1.5 border border-border max-w-sm">
                       <Link
-                        key={value}
-                        href={`/ranking?mode=${value}${range === "weekly" ? "&range=weekly" : ""}`}
-                        className={`rounded-full border px-4 py-2 text-xs font-semibold sm:text-sm ${
-                          mode === value
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-card text-foreground shadow-sm"
+                        href={`/ranking?mode=normal${range === "weekly" ? "&range=weekly" : ""}`}
+                        className={`rounded-xl py-2 text-center text-xs font-bold transition-all duration-300 ${
+                          !mode.startsWith("eco-villa")
+                            ? "bg-primary text-primary-foreground shadow-md"
+                            : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        {label}
+                        Eco-Catch
                       </Link>
-                    ))}
+                      <Link
+                        href={`/ranking?mode=eco-villa-normal${range === "weekly" ? "&range=weekly" : ""}`}
+                        className={`rounded-xl py-2 text-center text-xs font-bold transition-all duration-300 ${
+                          mode.startsWith("eco-villa")
+                            ? "bg-primary text-primary-foreground shadow-md"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Eco-Villa
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Dificultad
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(
+                        mode.startsWith("eco-villa") ? ECO_VILLA_MODES : ECO_CATCH_MODES
+                      ).map(([value, label]) => (
+                        <Link
+                          key={value}
+                          href={`/ranking?mode=${value}${range === "weekly" ? "&range=weekly" : ""}`}
+                          className={`rounded-full border px-4 py-2 text-xs font-semibold sm:text-sm transition-all duration-300 ${
+                            mode === value
+                              ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                              : "border-border bg-card text-foreground shadow-sm hover:bg-surface-raised"
+                          }`}
+                        >
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div>

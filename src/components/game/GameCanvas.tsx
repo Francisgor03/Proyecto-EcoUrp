@@ -57,7 +57,7 @@ export default function GameCanvas({ state, bridge, isFullscreen = false, classN
           return;
         }
 
-        const engine = state.mode === "eco-villa"
+        const engine = state.mode.startsWith("eco-villa")
           ? new EcoVillaEngine({
               app: pixiApp,
               assets: loadedAssets,
@@ -134,7 +134,7 @@ export default function GameCanvas({ state, bridge, isFullscreen = false, classN
       ref={wrapperRef}
       className={wrapperClassName}
       style={{ touchAction: "none" }}
-      aria-label={state.mode === "eco-villa" ? "Canvas Eco-Villa con Pixi" : "Canvas Eco-Catch con Pixi"}
+      aria-label={state.mode.startsWith("eco-villa") ? "Canvas Eco-Villa con Pixi" : "Canvas Eco-Catch con Pixi"}
       aria-busy={isLoading}
       data-tutorial="tutorial-game-canvas"
     >
@@ -156,7 +156,7 @@ export default function GameCanvas({ state, bridge, isFullscreen = false, classN
               </div>
             </div>
             <p className="mt-3 text-sm font-semibold text-foreground">
-              {state.mode === "eco-villa" ? "Cargando Eco-Villa" : "Cargando Eco-Catch"}
+              {state.mode.startsWith("eco-villa") ? "Cargando Eco-Villa" : "Cargando Eco-Catch"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {loadError ?? "Preparando recursos del juego..."}

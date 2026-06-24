@@ -1,4 +1,14 @@
-export const GAME_MODE_IDS = ["easy", "normal", "hard", "timed", "zen", "eco-villa"] as const;
+export const GAME_MODE_IDS = [
+  "easy",
+  "normal",
+  "hard",
+  "timed",
+  "zen",
+  "eco-villa",
+  "eco-villa-easy",
+  "eco-villa-normal",
+  "eco-villa-hard"
+] as const;
 
 export type GameModeId = (typeof GAME_MODE_IDS)[number];
 
@@ -7,7 +17,7 @@ export type GameModeId = (typeof GAME_MODE_IDS)[number];
  * de las verticales clásicas (Eco-Catch).
  */
 export function isHorizontalMode(mode: GameModeId): boolean {
-  return mode === "eco-villa";
+  return mode.startsWith("eco-villa");
 }
 
 export interface GameModeConfig {
@@ -79,6 +89,36 @@ const GAME_MODE_CONFIG_MAP: Record<GameModeId, GameModeConfig> = {
     spawnMs: 1900,
     // En modo horizontal, fallSpeed se reutiliza como velocidad de drift (px/s).
     fallSpeed: 200,
+    lives: 3,
+    timeLimitMs: null,
+    infiniteLives: false,
+  },
+  "eco-villa-easy": {
+    id: "eco-villa-easy",
+    label: "Fácil",
+    description: "Navegación lenta con menos residuos y obstáculos.",
+    spawnMs: 2500,
+    fallSpeed: 140,
+    lives: 5,
+    timeLimitMs: null,
+    infiniteLives: false,
+  },
+  "eco-villa-normal": {
+    id: "eco-villa-normal",
+    label: "Normal",
+    description: "Velocidad estándar y flujo moderado de residuos y troncos.",
+    spawnMs: 1900,
+    fallSpeed: 200,
+    lives: 3,
+    timeLimitMs: null,
+    infiniteLives: false,
+  },
+  "eco-villa-hard": {
+    id: "eco-villa-hard",
+    label: "Difícil",
+    description: "Corriente rápida, muchos obstáculos y mayor velocidad de reacción.",
+    spawnMs: 1300,
+    fallSpeed: 260,
     lives: 3,
     timeLimitMs: null,
     infiniteLives: false,

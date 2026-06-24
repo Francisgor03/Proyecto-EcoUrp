@@ -23,6 +23,11 @@ import GameUI from "@/components/game/GameUI";
 import GameOverModal from "@/components/game/GameOverModal";
 import PowerUpHUD from "@/components/game/PowerUpHUD";
 import { useGameState } from "@/game/useGameState";
+import { GAME_MODES } from "@/game/config/gameModes";
+
+const ECO_VILLA_MENU_MODES = GAME_MODES.filter(
+  (mode) => mode.id.startsWith("eco-villa") && mode.id !== "eco-villa"
+);
 
 /**
  * Eco-Villa arranca directamente en modo "eco-villa":
@@ -79,7 +84,9 @@ export default function EcoVillaPage() {
   const { session, loading, isConfigured } = useAuth();
 
   // Inicializar el motor directamente en modo eco-villa.
-  const { state, actions, bridge } = useGameState("eco-villa");
+  const { state, actions, bridge } = useGameState("eco-villa-normal");
+
+  const [selectedDifficulty, setSelectedDifficulty] = useState<"eco-villa-easy" | "eco-villa-normal" | "eco-villa-hard">("eco-villa-normal");
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const viewportControls = useAnimationControls();
@@ -161,7 +168,7 @@ export default function EcoVillaPage() {
   }
 
   const handleStartGame = () => {
-    actions.startGame("eco-villa");
+    actions.startGame(selectedDifficulty);
   };
 
   return (
@@ -299,66 +306,51 @@ export default function EcoVillaPage() {
                 exit={{ opacity: 0, y: 12 }}
                 transition={{ duration: 0.44, ease: "easeOut" }}
               >
-                <div className="w-full max-w-xl rounded-3xl border border-cyan-700/60 bg-teal-900/80 p-5 shadow-2xl shadow-black/30 backdrop-blur-md sm:p-8">
-
-                  {/* Game icon */}
-                  <div className="mb-4 flex justify-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/20 text-4xl">
-                      🛶
-                    </div>
-                  </div>
-
-                  <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
-                    Pantanos de Villa
+                <div className="w-full max-w-3xl max-h-[82dvh] overflow-y-auto rounded-3xl border border-cyan-700/60 bg-teal-900/80 p-5 shadow-2xl shadow-black/10 backdrop-blur-md sm:max-h-none sm:overflow-visible sm:p-8">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+                    Selecciona modo
                   </p>
-                  <h2 className="mt-2 text-center text-2xl font-black text-white sm:text-3xl">
-                    Eco-Villa
+                  <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+                    Eco-Villa: Canales de totora
                   </h2>
-                  <p className="mt-3 text-center text-sm text-cyan-200/80">
-                    Navega en tu balsa de totora y recoge los residuos flotantes antes de que
-                    lleguen a los nidos de las aves (extremo izquierdo). ¡Esquiva los troncos
-                    y ten cuidado con las manchas de aceite!
+                  <p className="mt-2 text-xs text-cyan-200/70 sm:text-sm">
+                    Navega y recoge los residuos flotantes antes de que lleguen a los nidos. Controles: W/S/A/D o flechas de dirección para moverte en 2D.
                   </p>
 
-                  {/* Controls */}
-                  <div className="mt-5 rounded-2xl border border-cyan-700/40 bg-teal-950/60 p-4">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
-                      Controles
-                    </p>
-                    <div className="grid grid-cols-2 gap-3 text-sm text-cyan-100/90">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-lg bg-teal-800 px-2 py-1 font-mono text-xs font-bold text-white">
-                          A / ←
-                        </span>
-                        <span className="text-xs text-cyan-200/70">Izquierda</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-lg bg-teal-800 px-2 py-1 font-mono text-xs font-bold text-white">
-                          D / →
-                        </span>
-                        <span className="text-xs text-cyan-200/70">Derecha</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-lg bg-teal-800 px-2 py-1 font-mono text-xs font-bold text-white">
-                          W / ↑
-                        </span>
-                        <span className="text-xs text-cyan-200/70">Arriba</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-lg bg-teal-800 px-2 py-1 font-mono text-xs font-bold text-white">
-                          S / ↓
-                        </span>
-                        <span className="text-xs text-cyan-200/70">Abajo</span>
-                      </div>
-                    </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {ECO_VILLA_MENU_MODES.map((mode) => {
+                      const selected = mode.id === selectedDifficulty;
+
+                      return (
+                        <AnimatedButton
+                          key={mode.id}
+                          type="button"
+                          onClick={() => setSelectedDifficulty(mode.id as any)}
+                          className={`rounded-2xl border p-3 text-left shadow-md transition-all duration-300 sm:p-4 ${
+                            selected
+                              ? "border-cyan-400 bg-teal-950/70 text-white shadow-md shadow-cyan-900/40"
+                              : "border-cyan-800/40 bg-teal-950/40 text-cyan-100/70 hover:bg-teal-950/60"
+                          }`}
+                        >
+                          <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+                            {mode.label}
+                          </p>
+                          <p className="mt-2 text-xs text-cyan-200/60 sm:text-sm">
+                            {mode.description}
+                          </p>
+                          <p className="mt-3 text-xs font-semibold text-cyan-300/80">
+                            Spawn: {mode.spawnMs}ms | Velocidad: {mode.fallSpeed}
+                          </p>
+                        </AnimatedButton>
+                      );
+                    })}
                   </div>
 
                   {/* Mission reminder */}
-                  <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-950/40 p-3">
-                    <span className="mt-0.5 text-lg">⚠️</span>
-                    <p className="text-xs text-red-300/90">
-                      Si un residuo cruza el borde izquierdo, llegará a los nidos
-                      de las aves y <strong>perderás una vida</strong>. ¡Esquiva los troncos 🪵 y rescata a las aves 🕊️!
+                  <div className="mt-4 flex items-start gap-2 rounded-xl border border-cyan-800/35 bg-teal-950/50 p-3">
+                    <span className="mt-0.5 text-lg">💡</span>
+                    <p className="text-xs text-cyan-200/80">
+                      Si un residuo cruza el extremo izquierdo llegará a los nidos y <strong>perderás una vida</strong>. ¡Esquiva los troncos 🪵 y ten cuidado con las manchas de aceite!
                     </p>
                   </div>
 
@@ -367,13 +359,13 @@ export default function EcoVillaPage() {
                       type="button"
                       id="eco-villa-start-btn"
                       onClick={handleStartGame}
-                      className="w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-teal-500 px-5 py-3 text-sm font-bold text-white shadow-md shadow-cyan-900/40 sm:py-3"
+                      className="w-full rounded-2xl bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-cyan-900/40 sm:py-3 transition hover:brightness-110"
                     >
-                      ▶ Navegar ahora
+                      Iniciar partida
                     </AnimatedButton>
                     <Link
                       href="/ranking"
-                      className="inline-flex w-full items-center justify-center rounded-2xl border border-cyan-700/50 bg-teal-900/50 px-5 py-2.5 text-sm font-semibold text-cyan-200 sm:py-3"
+                      className="inline-flex w-full items-center justify-center rounded-2xl border border-cyan-700/50 bg-teal-900/50 px-5 py-2.5 text-sm font-semibold text-cyan-200 sm:py-3 transition hover:bg-teal-900/70"
                     >
                       Ver ranking
                     </Link>
@@ -389,7 +381,7 @@ export default function EcoVillaPage() {
             summary={state.summary}
             saveStatus={state.saveStatus}
             saveMessage={state.saveMessage}
-            onReplay={() => actions.startGame("eco-villa")}
+            onReplay={() => actions.startGame(state.mode)}
             onBackToMenu={actions.returnToMenu}
           />
         </motion.div>

@@ -421,18 +421,7 @@ export class EcoVillaEngine implements BaseEngine {
       return;
     }
 
-    if (waste.isBirdRescue) {
-      // Rescatar ave
-      this.removeWasteAt(index);
-      this.particleEffect.emitSuccessBurst(hitX, hitY, "#10b981"); // Verde esmeralda
-      if (this.bridge.onBirdRescue) {
-        const nextState = this.bridge.onBirdRescue();
-        if (nextState.phase !== "playing") {
-          this.stopRound();
-        }
-      }
-      return;
-    }
+
 
     if (waste.isOilSpill) {
       // Mancha de aceite
@@ -465,8 +454,8 @@ export class EcoVillaEngine implements BaseEngine {
     this.removeWasteAt(index);
 
     // Solo los residuos normales y las manchas de aceite restan vida al llegar a los nidos.
-    // Los obstáculos y aves no penalizan por fugarse.
-    if (!waste.isObstacle && !waste.isBirdRescue) {
+    // Los obstáculos no penalizan por fugarse.
+    if (!waste.isObstacle) {
       const nextState = this.bridge.onMissedWaste();
       if (nextState.phase !== "playing") {
         this.stopRound();
@@ -534,21 +523,18 @@ export class EcoVillaEngine implements BaseEngine {
   private spawnItem(pos: SpawnPosition): void {
     const roll = Math.random();
 
-    if (roll < 0.60) {
-      // 60% Basura estándar
-      this.spawnWaste(this.pickRandomWasteType(), pos, false, false, false);
-    } else if (roll < 0.70) {
+    if (roll < 0.65) {
+      // 65% Basura estándar
+      this.spawnWaste(this.pickRandomWasteType(), pos, false, false);
+    } else if (roll < 0.75) {
       // 10% PowerUp
       this.spawnPowerUp(this.pickRandomPowerUpType(), pos);
-    } else if (roll < 0.82) {
-      // 12% Tronco obstáculo
-      this.spawnWaste("organic", pos, false, true, false);
-    } else if (roll < 0.92) {
-      // 10% Rescate de Ave
-      this.spawnWaste("organic", pos, false, false, true);
+    } else if (roll < 0.90) {
+      // 15% Tronco obstáculo
+      this.spawnWaste("organic", pos, false, true);
     } else {
-      // 8% Mancha de aceite
-      this.spawnWaste("organic", pos, true, false, false);
+      // 10% Mancha de aceite
+      this.spawnWaste("organic", pos, true, false);
     }
   }
 
@@ -556,16 +542,13 @@ export class EcoVillaEngine implements BaseEngine {
     type: WasteTypeId,
     pos: SpawnPosition,
     isOilSpill = false,
-    isObstacle = false,
-    isBirdRescue = false
+    isObstacle = false
   ): void {
     if (!this.isRoundRunning || !this.assets.ecoVilla) return;
 
     let textures: Texture[];
     if (isObstacle) {
       textures = [this.assets.ecoVilla.obstacleLog];
-    } else if (isBirdRescue) {
-      textures = [this.assets.ecoVilla.birdRescue];
     } else if (isOilSpill) {
       textures = this.assets.ecoVilla.oilSpills;
     } else {
@@ -582,7 +565,6 @@ export class EcoVillaEngine implements BaseEngine {
       horizontal: true,
       isOilSpill,
       isObstacle,
-      isBirdRescue,
     });
 
     this.spawnedItemCount += 1;

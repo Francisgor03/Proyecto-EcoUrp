@@ -12,7 +12,6 @@ export interface WasteOptions {
   horizontal?: boolean;
   isOilSpill?: boolean;
   isObstacle?: boolean;
-  isBirdRescue?: boolean;
 }
 
 /**
@@ -28,7 +27,6 @@ export class Waste extends Container {
   public readonly horizontal: boolean;
   public readonly isOilSpill: boolean;
   public readonly isObstacle: boolean;
-  public readonly isBirdRescue: boolean;
 
   private readonly sprite: Sprite;
   private readonly wobbleAmplitude: number;
@@ -49,7 +47,6 @@ export class Waste extends Container {
     this.horizontal = options.horizontal ?? false;
     this.isOilSpill = options.isOilSpill ?? false;
     this.isObstacle = options.isObstacle ?? false;
-    this.isBirdRescue = options.isBirdRescue ?? false;
     this._fallSpeed = options.fallSpeed;
     if (this.isObstacle) {
       this._fallSpeed = 45 * (options.fallSpeed / 200);

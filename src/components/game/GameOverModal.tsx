@@ -13,6 +13,18 @@ interface GameOverModalProps {
   onBackToMenu: () => void;
 }
 
+const MODE_LABELS: Record<string, string> = {
+  easy: "Fácil",
+  normal: "Normal",
+  hard: "Difícil",
+  timed: "Contrarreloj",
+  zen: "Zen",
+  "eco-villa-easy": "Fácil",
+  "eco-villa-normal": "Normal",
+  "eco-villa-hard": "Difícil",
+  "eco-villa": "Eco-Villa",
+};
+
 type AnimatedButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof MotionProps> &
   MotionProps & {
     children: ReactNode;
@@ -78,7 +90,7 @@ export default function GameOverModal({
           >
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Partida terminada</p>
             <h2 id="ecourp-game-over-title" className="mt-2 text-2xl font-black text-foreground sm:text-3xl">
-              Eco-Catch
+              {summary.mode.startsWith("eco-villa") ? "Eco-Villa" : "Eco-Catch"}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">Resumen de tu rendimiento final.</p>
 
@@ -108,7 +120,7 @@ export default function GameOverModal({
                 Aciertos: <span className="font-semibold">{summary.correct}</span> | Errores: {" "}
                 <span className="font-semibold">{summary.wrong + summary.missed}</span>
               </p>
-              <p className="mt-1">Modo: <span className="font-semibold capitalize">{summary.mode}</span></p>
+              <p className="mt-1">Modo: <span className="font-semibold">{MODE_LABELS[summary.mode] || summary.mode}</span></p>
             </div>
 
             <p className="mt-4 text-xs font-medium text-muted-foreground">
