@@ -24,6 +24,7 @@ import GameOverModal from "@/components/game/GameOverModal";
 import PowerUpHUD from "@/components/game/PowerUpHUD";
 import { useGameState } from "@/game/useGameState";
 import { GAME_MODES } from "@/game/config/gameModes";
+import { useBackgroundMusic } from "@/hooks/useBackgroundMusic";
 
 const ECO_VILLA_MENU_MODES = GAME_MODES.filter(
   (mode) => mode.id.startsWith("eco-villa") && mode.id !== "eco-villa"
@@ -85,6 +86,12 @@ export default function EcoVillaPage() {
 
   // Inicializar el motor directamente en modo eco-villa.
   const { state, actions, bridge } = useGameState("eco-villa-normal");
+
+  const { isMuted: isMusicMuted, toggleMute: toggleMusicMute } = useBackgroundMusic(
+    "/music/09. Watery Graves (fast) eco villa.mp3",
+    state.phase === "playing" && !state.manualPaused,
+    state.manualPaused
+  );
 
   const [selectedDifficulty, setSelectedDifficulty] = useState<"eco-villa-easy" | "eco-villa-normal" | "eco-villa-hard">("eco-villa-normal");
 
@@ -278,6 +285,8 @@ export default function EcoVillaPage() {
                   onToggleFullscreen={toggleFullscreen}
                   isFullscreen={isFullscreen}
                   layout="overlay"
+                  onToggleMusic={toggleMusicMute}
+                  isMusicMuted={isMusicMuted}
                 />
               </div>
               <div className="sm:hidden">
@@ -290,6 +299,8 @@ export default function EcoVillaPage() {
                   onToggleFullscreen={toggleFullscreen}
                   isFullscreen={isFullscreen}
                   layout="stacked"
+                  onToggleMusic={toggleMusicMute}
+                  isMusicMuted={isMusicMuted}
                 />
               </div>
             </>

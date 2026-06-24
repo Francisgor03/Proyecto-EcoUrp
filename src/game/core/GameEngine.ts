@@ -16,6 +16,7 @@ import { PowerUp } from "@/game/entities/PowerUp";
 import { Waste } from "@/game/entities/Waste";
 import { ParticleEffect } from "@/game/entities/ParticleEffect";
 import type { LoadedGameAssets } from "@/game/utils/assetLoader";
+import { playSfx } from "@/game/utils/sfx";
 import type { BaseEngine, GameStateBridge, GameStateSnapshot } from "./BaseEngine";
 
 interface ParallaxLayer {
@@ -429,6 +430,7 @@ export class GameEngine implements BaseEngine {
 
     if (wasteType === selectedType) {
       this.particleEffect.emitSuccessBurst(hitX, hitY, this.resolveTypeColor(wasteType));
+      playSfx("recogida");
       const nextState = this.bridge.onCorrectCatch();
 
       if (nextState.phase !== "playing") {
@@ -439,6 +441,7 @@ export class GameEngine implements BaseEngine {
     }
 
     const feedback = buildWrongBinFeedback(wasteType, selectedType);
+    playSfx("error");
     const nextState = this.bridge.onWrongCatch(feedback);
     if (nextState.phase !== "playing") {
       this.stopRound();
@@ -465,6 +468,7 @@ export class GameEngine implements BaseEngine {
   private resolveMissedWaste(index: number, _waste: Waste): void {
     this.removeWasteAt(index);
 
+    playSfx("error");
     const nextState = this.bridge.onMissedWaste();
     if (nextState.phase !== "playing") {
       this.stopRound();
@@ -541,7 +545,9 @@ export class GameEngine implements BaseEngine {
   }
 
   private spawnItem(pos: SpawnPosition): void {
-    const shouldSpawnPowerUp = Math.random() < POWER_UP_DROP_CHANCE;
+    const isEasy = this.currentDifficulty.mode === "easy";
+    const powerUpChance = isEasy ? 0.10 : 0.05;
+    const shouldSpawnPowerUp = Math.random() < powerUpChance;
 
     if (shouldSpawnPowerUp) {
       this.spawnPowerUp(this.pickRandomPowerUpType(), pos);

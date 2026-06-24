@@ -14,6 +14,8 @@ interface GameUIProps {
   onToggleFullscreen?: () => void;
   isFullscreen?: boolean;
   layout?: "overlay" | "stacked";
+  onToggleMusic?: () => void;
+  isMusicMuted?: boolean;
 }
 
 type AnimatedButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof MotionProps> &
@@ -65,6 +67,8 @@ export default function GameUI({
   onToggleFullscreen,
   isFullscreen = false,
   layout = "overlay",
+  onToggleMusic,
+  isMusicMuted = false,
 }: GameUIProps) {
   const streakMultiplier = getStreakMultiplier(state.streak);
   const streakToneClass = getStreakTone(streakMultiplier);
@@ -117,6 +121,53 @@ export default function GameUI({
                 <path d="M8 5h3v14H8V5zm5 0h3v14h-3V5z" />
               </svg>
             </AnimatedButton>
+
+            {onToggleMusic && (
+              <AnimatedButton
+                type="button"
+                onClick={onToggleMusic}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black/55 text-white shadow-lg shadow-black/30 backdrop-blur-sm transition hover:bg-black/70"
+                title={isMusicMuted ? "Activar música" : "Desactivar música"}
+                aria-label={isMusicMuted ? "Activar música" : "Desactivar música"}
+              >
+                {isMusicMuted ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                    />
+                  </svg>
+                )}
+              </AnimatedButton>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3" data-tutorial="tutorial-hud-stats">
@@ -244,28 +295,57 @@ export default function GameUI({
                 <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                   Configuracion
                 </p>
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Pantalla completa</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isFullscreen ? "Activada" : "Desactivada"}
-                    </p>
+                <div className="mt-3 flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Pantalla completa</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isFullscreen ? "Activada" : "Desactivada"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onToggleFullscreen}
+                      disabled={!fullscreenAvailable}
+                      role="switch"
+                      aria-checked={isFullscreen}
+                      aria-label="Pantalla completa"
+                      className={`relative h-8 w-14 rounded-full border border-border transition ${fullscreenToggleClassName}`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition ${
+                          isFullscreen ? "translate-x-6" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={onToggleFullscreen}
-                    disabled={!fullscreenAvailable}
-                    role="switch"
-                    aria-checked={isFullscreen}
-                    aria-label="Pantalla completa"
-                    className={`relative h-8 w-14 rounded-full border border-border transition ${fullscreenToggleClassName}`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition ${
-                        isFullscreen ? "translate-x-6" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
+
+                  {onToggleMusic && (
+                    <div className="flex items-center justify-between gap-3 border-t border-border/40 pt-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Música de fondo</p>
+                        <p className="text-xs text-muted-foreground">
+                          {isMusicMuted ? "Desactivada" : "Activada"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onToggleMusic}
+                        role="switch"
+                        aria-checked={!isMusicMuted}
+                        aria-label="Música de fondo"
+                        className={`relative h-8 w-14 rounded-full border border-border transition ${
+                          !isMusicMuted ? "bg-emerald-500/90" : "bg-slate-200/70"
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition ${
+                            !isMusicMuted ? "translate-x-6" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>

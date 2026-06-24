@@ -16,6 +16,7 @@ import { PowerUp } from "@/game/entities/PowerUp";
 import { Waste } from "@/game/entities/Waste";
 import { ParticleEffect } from "@/game/entities/ParticleEffect";
 import type { LoadedGameAssets } from "@/game/utils/assetLoader";
+import { playSfx } from "@/game/utils/sfx";
 import type { BaseEngine, GameStateBridge, GameStateSnapshot } from "./BaseEngine";
 
 interface ParallaxLayer {
@@ -412,6 +413,7 @@ export class EcoVillaEngine implements BaseEngine {
       // Chocar con tronco
       this.removeWasteAt(index);
       this.triggerErrorFeedback();
+      playSfx("tronco");
       if (this.bridge.onObstacleHit) {
         const nextState = this.bridge.onObstacleHit();
         if (nextState.phase !== "playing") {
@@ -428,6 +430,7 @@ export class EcoVillaEngine implements BaseEngine {
       this.removeWasteAt(index);
       this.oilSlowDurationRemainingMs = 2000; // Ralentización por 2 segundos
       this.particleEffect.emitSuccessBurst(hitX, hitY, "#78350f"); // Café
+      playSfx("aceite");
       return;
     }
 
@@ -435,6 +438,7 @@ export class EcoVillaEngine implements BaseEngine {
     const typeColor = this.resolveTypeColor(waste.type);
     this.removeWasteAt(index);
     this.particleEffect.emitSuccessBurst(hitX, hitY, typeColor);
+    playSfx("recogida");
 
     const nextState = this.bridge.onCorrectCatch();
     if (nextState.phase !== "playing") {
@@ -456,6 +460,7 @@ export class EcoVillaEngine implements BaseEngine {
     // Solo los residuos normales y las manchas de aceite restan vida al llegar a los nidos.
     // Los obstáculos no penalizan por fugarse.
     if (!waste.isObstacle) {
+      playSfx("error");
       const nextState = this.bridge.onMissedWaste();
       if (nextState.phase !== "playing") {
         this.stopRound();
@@ -522,19 +527,36 @@ export class EcoVillaEngine implements BaseEngine {
 
   private spawnItem(pos: SpawnPosition): void {
     const roll = Math.random();
+    const isEasy = this.currentDifficulty.mode === "eco-villa-easy";
 
-    if (roll < 0.65) {
-      // 65% Basura estándar
-      this.spawnWaste(this.pickRandomWasteType(), pos, false, false);
-    } else if (roll < 0.75) {
-      // 10% PowerUp
-      this.spawnPowerUp(this.pickRandomPowerUpType(), pos);
-    } else if (roll < 0.90) {
-      // 15% Tronco obstáculo
-      this.spawnWaste("organic", pos, false, true);
+    if (isEasy) {
+      if (roll < 0.65) {
+        // 65% Basura estándar
+        this.spawnWaste(this.pickRandomWasteType(), pos, false, false);
+      } else if (roll < 0.75) {
+        // 10% PowerUp
+        this.spawnPowerUp(this.pickRandomPowerUpType(), pos);
+      } else if (roll < 0.90) {
+        // 15% Tronco obstáculo
+        this.spawnWaste("organic", pos, false, true);
+      } else {
+        // 10% Mancha de aceite
+        this.spawnWaste("organic", pos, true, false);
+      }
     } else {
-      // 10% Mancha de aceite
-      this.spawnWaste("organic", pos, true, false);
+      if (roll < 0.70) {
+        // 70% Basura estándar
+        this.spawnWaste(this.pickRandomWasteType(), pos, false, false);
+      } else if (roll < 0.75) {
+        // 5% PowerUp
+        this.spawnPowerUp(this.pickRandomPowerUpType(), pos);
+      } else if (roll < 0.90) {
+        // 15% Tronco obstáculo
+        this.spawnWaste("organic", pos, false, true);
+      } else {
+        // 10% Mancha de aceite
+        this.spawnWaste("organic", pos, true, false);
+      }
     }
   }
 

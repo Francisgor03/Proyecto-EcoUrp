@@ -29,6 +29,7 @@ import { getPowerUpDefinition, POWER_UP_IDS } from "@/game/config/powerUps";
 import { GAME_TUTORIAL_STEPS, MENU_TUTORIAL_STEPS } from "@/game/tutorialSteps";
 import { buildWrongBinFeedback, useGameState } from "@/game/useGameState";
 import { useGameTutorial } from "@/hooks/useGameTutorial";
+import { useBackgroundMusic } from "@/hooks/useBackgroundMusic";
 
 const ECO_CATCH_MENU_MODES = GAME_MODES.filter(
   (mode) => !mode.id.startsWith("eco-villa") && mode.id !== "eco-villa"
@@ -71,6 +72,12 @@ export default function EcoCatchPage() {
   const { session, loading, isConfigured } = useAuth();
 
   const { state, actions, bridge } = useGameState("normal");
+
+  const { isMuted: isMusicMuted, toggleMute: toggleMusicMute } = useBackgroundMusic(
+    "/music/13. Graze the Roof  eco catch.mp3",
+    state.phase === "playing" && !state.manualPaused,
+    state.manualPaused
+  );
   const {
     isOpen: isTutorialOpen,
     stepIndex: tutorialStepIndex,
@@ -568,6 +575,8 @@ export default function EcoCatchPage() {
                   onToggleFullscreen={toggleFullscreen}
                   isFullscreen={isFullscreen}
                   layout="overlay"
+                  onToggleMusic={toggleMusicMute}
+                  isMusicMuted={isMusicMuted}
                 />
               </div>
               <div className="sm:hidden">
@@ -580,6 +589,8 @@ export default function EcoCatchPage() {
                   onToggleFullscreen={toggleFullscreen}
                   isFullscreen={isFullscreen}
                   layout="stacked"
+                  onToggleMusic={toggleMusicMute}
+                  isMusicMuted={isMusicMuted}
                 />
               </div>
             </>
